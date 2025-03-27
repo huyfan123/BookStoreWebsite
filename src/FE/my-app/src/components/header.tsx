@@ -1,0 +1,162 @@
+import * as React from "react";
+import {
+  AppBar,
+  Toolbar,
+  IconButton,
+  Typography,
+  Box,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  useMediaQuery,
+  Theme,
+  Badge,
+  Button,
+  Menu,
+  MenuItem,
+} from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: "#2E3B55",
+    },
+    secondary: {
+      main: "#B71C1C",
+    },
+  },
+});
+
+const navItems = ["Home", "Store", "About", "Contact"];
+
+export default function BookstoreNavbar() {
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  // const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'));
+
+  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
+  const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) =>
+    setAnchorEl(event.currentTarget);
+  const handleCloseMenu = () => setAnchorEl(null);
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    handleCloseMenu();
+  };
+
+  const drawer = (
+    <Box onClick={handleDrawerToggle} sx={{ textAlign: "center" }}>
+      <Typography variant="h6" sx={{ my: 2 }}>
+        Book Haven
+      </Typography>
+      <List>
+        {navItems.map((item) => (
+          <ListItem key={item} disablePadding>
+            <ListItemButton sx={{ textAlign: "center" }}>
+              <ListItemText primary={item} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
+
+  return (
+    <ThemeProvider theme={theme}>
+      <AppBar component="nav" position="sticky">
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, display: { md: "none" } }}
+          >
+            <MenuIcon />
+          </IconButton>
+
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{ flexGrow: 1, display: { xs: "none", md: "block" } }}
+          >
+            BOOKSTORE
+          </Typography>
+
+          <Box sx={{ display: { xs: "none", md: "flex" }, flexGrow: 1 }}>
+            {navItems.map((item) => (
+              <Button key={item} sx={{ color: "#fff" }}>
+                {item}
+              </Button>
+            ))}
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              alignItems: "center",
+              marginLeft: "auto",
+            }}
+          >
+            {isLoggedIn ? (
+              <>
+                <IconButton color="inherit">
+                  <Badge badgeContent={3} color="secondary">
+                    <ShoppingCartIcon />
+                  </Badge>
+                </IconButton>
+
+                <IconButton onClick={handleOpenMenu} color="inherit">
+                  <AccountCircleIcon />
+                </IconButton>
+
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={handleCloseMenu}
+                  PaperProps={{ sx: { mt: 1.5 } }}
+                  anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                  transformOrigin={{ vertical: "top", horizontal: "right" }}
+                >
+                  <MenuItem onClick={handleCloseMenu}>Profile</MenuItem>
+                  <MenuItem onClick={handleCloseMenu}>Settings</MenuItem>
+                  <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                </Menu>
+              </>
+            ) : (
+              <Button
+                color="inherit"
+                onClick={() => setIsLoggedIn(true)}
+                sx={{ border: "1px solid white" }}
+              >
+                Login / Sign Up
+              </Button>
+            )}
+          </Box>
+        </Toolbar>
+      </AppBar>
+
+      <Box component="nav">
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            display: { xs: "block", md: "none" },
+            "& .MuiDrawer-paper": { boxSizing: "border-box", width: 240 },
+          }}
+        >
+          {drawer}
+        </Drawer>
+      </Box>
+    </ThemeProvider>
+  );
+}
