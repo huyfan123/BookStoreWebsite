@@ -7,6 +7,7 @@ import {
   Grid,
   Card,
   CardContent,
+  CardMedia,
   Button,
   List,
   ListItem,
@@ -15,53 +16,32 @@ import {
   IconButton,
   Badge,
   Box,
-  CardMedia,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
-import { ShoppingCart, Folder, Book } from "@mui/icons-material";
+import { Search, ShoppingCart, MenuBook } from "@mui/icons-material";
+import Header from "../components/header";
 
 const books = [
   {
+    id: 1,
     title: "Work for Money, Design for Love",
+    author: "John Designer",
     category: "Business & Money",
     price: 22.0,
-    section: "For You",
-    image: "https://via.placeholder.com/200x300/FF0000/FFFFFF?text=Book1",
+    image:
+      "https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1546910265l/2.jpg",
   },
   {
+    id: 2,
     title: "The Psychology of Graphic Design Pricing",
+    author: "Sarah Psych",
     category: "Graphic Design",
     price: 20.59,
-    section: "For You",
-    image: "https://via.placeholder.com/200x300/00FF00/FFFFFF?text=Book2",
+    image:
+      "https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1553383690l/2657.jpg",
   },
-  {
-    title: "Logo Design Love: A Guide to Creating...",
-    category: "Graphic Design",
-    price: 24.91,
-    section: "For You",
-    image: "https://via.placeholder.com/200x300/0000FF/FFFFFF?text=Book3",
-  },
-  {
-    title: "Very Nice: A Novel Marcy Dermansky",
-    category: "Literature & Fiction",
-    price: 18.9,
-    section: "Amazon Best Seller",
-    image: "https://via.placeholder.com/200x300/FFFF00/000000?text=Book4",
-  },
-  {
-    title: "Juliet the Maniac: A Novel",
-    category: "Literature & Fiction",
-    price: 9.99,
-    section: "Amazon Best Seller",
-    image: "https://via.placeholder.com/200x300/FF00FF/FFFFFF?text=Book5",
-  },
-  {
-    title: "Thinking with Type, 2nd revised and expanded...",
-    category: "Graphic Design",
-    price: 12.04,
-    section: "Amazon Best Seller",
-    image: "https://via.placeholder.com/200x300/00FFFF/000000?text=Book6",
-  },
+  // Add more books as needed...
 ];
 
 function BookCard({ book, onAddToCart }) {
@@ -80,11 +60,14 @@ function BookCard({ book, onAddToCart }) {
         height="200"
         image={book.image}
         alt={book.title}
-        sx={{ objectFit: "contain", p: 1 }}
+        sx={{ objectFit: "cover" }}
       />
       <CardContent sx={{ flexGrow: 1 }}>
         <Typography gutterBottom variant="h6" component="div">
           {book.title}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          {book.author}
         </Typography>
         <Typography variant="body2" color="text.secondary">
           {book.category}
@@ -114,102 +97,118 @@ function BookCard({ book, onAddToCart }) {
 
 export default function BookStore() {
   const [cartItems, setCartItems] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
   const handleAddToCart = (book) => {
     setCartItems([...cartItems, book]);
   };
 
+  const filteredBooks = books.filter((book) => {
+    const matchesSearch =
+      book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "All" || book.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
   return (
-    <Box sx={{ display: "flex" }}>
-      {/* Sidebar */}
-      <Box
-        sx={{
-          width: 240,
-          minHeight: "100vh",
-          borderRight: "1px solid rgba(0, 0, 0, 0.12)",
-          p: 2,
-        }}
-      >
-        <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-          Hypebooks
-        </Typography>
-
-        <List>
-          {["Wishlist", "My Collection"].map((text) => (
-            <ListItem button key={text}>
-              <Book sx={{ mr: 1 }} />
-              <ListItemText primary={text} />
-            </ListItem>
-          ))}
-        </List>
-
-        <Divider sx={{ my: 2 }} />
-
-        <Typography variant="subtitle1" gutterBottom>
-          Popular Subjects
-        </Typography>
-        <List>
-          {[
-            "Biographies & memoirs",
-            "Business & Money",
-            "Children's books",
-            "Computers & technology",
-            "Parenting & families",
-          ].map((text) => (
-            <ListItem button key={text}>
-              <Folder sx={{ mr: 1 }} />
-              <ListItemText primary={text} />
-            </ListItem>
-          ))}
-        </List>
-
-        {/* Add other categories similarly */}
-      </Box>
-
-      {/* Main Content */}
-      <Box sx={{ flexGrow: 1 }}>
-        <AppBar position="static" color="default" elevation={0}>
-          <Toolbar>
-            <Typography variant="h6" sx={{ flexGrow: 1 }}>
-              Book Store
-            </Typography>
-            <IconButton>
-              <Badge badgeContent={cartItems.length} color="error">
-                <ShoppingCart />
-              </Badge>
-            </IconButton>
-          </Toolbar>
-        </AppBar>
-
-        <Container maxWidth="lg" sx={{ p: 3 }}>
-          {/* For You Section */}
-          <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-            For You
+    <Box>
+      <Header numberOfItems={cartItems.length} />
+      <Box sx={{ display: "flex" }}>
+        {/* Filter Sidebar */}
+        <Box
+          sx={{
+            width: 240,
+            minHeight: "100vh",
+            borderRight: "1px solid rgba(0, 0, 0, 0.12)",
+            p: 2,
+            display: { xs: "none", md: "block" },
+          }}
+        >
+          <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+            Filters
           </Typography>
-          <Grid container spacing={3}>
-            {books
-              .filter((book) => book.section === "For You")
-              .map((book, index) => (
-                <Grid item xs={12} md={6} lg={4} key={index}>
+
+          <List>
+            {[
+              "All",
+              "Business & Money",
+              "Graphic Design",
+              "Literature & Fiction",
+            ].map((category) => (
+              <ListItem
+                button
+                key={category}
+                selected={category === selectedCategory}
+                onClick={() => setSelectedCategory(category)}
+                sx={{
+                  borderRadius: 1,
+                  bgcolor:
+                    category === selectedCategory
+                      ? "action.selected"
+                      : "inherit",
+                }}
+              >
+                <MenuBook sx={{ mr: 1 }} />
+                <ListItemText primary={category} />
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+
+        {/* Main Content */}
+        <Box sx={{ flexGrow: 1 }}>
+          <AppBar position="static" color="default" elevation={0}>
+            <Toolbar>
+              <TextField
+                variant="outlined"
+                size="small"
+                placeholder="Search books..."
+                sx={{
+                  flexGrow: 1,
+                  maxWidth: 500,
+                  mr: 2,
+                  "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {/* lúc thêm navbar thì xóa cái icon giỏ hàng này
+              <IconButton>
+                <Badge badgeContent={cartItems.length} color="error">
+                  <ShoppingCart /> 
+                </Badge>
+              </IconButton> */}
+            </Toolbar>
+          </AppBar>
+
+          <Container maxWidth="xl" sx={{ p: 3 }}>
+            <Grid container spacing={3}>
+              {filteredBooks.map((book) => (
+                <Grid
+                  item
+                  key={book.id}
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  lg={3}
+                  sx={{ display: "flex", height: "100%" }}
+                >
                   <BookCard book={book} onAddToCart={handleAddToCart} />
                 </Grid>
               ))}
-          </Grid>
-
-          {/* Amazon Best Seller Section */}
-          <Typography variant="h5" gutterBottom sx={{ mt: 4, mb: 3 }}>
-            Amazon Best Seller
-          </Typography>
-          <Grid container spacing={3}>
-            {books
-              .filter((book) => book.section === "Amazon Best Seller")
-              .map((book, index) => (
-                <Grid item xs={12} md={6} lg={4} key={index}>
-                  <BookCard book={book} onAddToCart={handleAddToCart} />
-                </Grid>
-              ))}
-          </Grid>
-        </Container>
+            </Grid>
+          </Container>
+        </Box>
       </Box>
     </Box>
   );

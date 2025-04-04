@@ -35,7 +35,7 @@ const theme = createTheme({
 
 const navItems = ["Home", "Store", "About", "Contact"];
 
-export default function BookstoreNavbar() {
+export default function BookstoreNavbar({ numberOfItems }) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -108,7 +108,7 @@ export default function BookstoreNavbar() {
             {isLoggedIn ? (
               <>
                 <IconButton color="inherit">
-                  <Badge badgeContent={3} color="secondary">
+                  <Badge badgeContent={numberOfItems} color="secondary">
                     <ShoppingCartIcon />
                   </Badge>
                 </IconButton>
