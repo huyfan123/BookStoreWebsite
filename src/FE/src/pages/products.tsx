@@ -4,20 +4,15 @@ import {
   Toolbar,
   Typography,
   Container,
-  Card,
-  CardContent,
-  CardMedia,
   Button,
   Box,
   TextField,
   InputAdornment,
-  IconButton,
-  Rating,
   Pagination,
   Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { Search, FavoriteBorder } from "@mui/icons-material";
+import { Search } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/header";
 import BookFilters from "../components/filter";
@@ -29,9 +24,7 @@ const books = [
     id: 1,
     title: "Work for Money, Design for Love",
     author: "John Designer",
-    category: "Business & Money",
     price: 22.0,
-    rating: 4.5,
     image:
       "https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1546910265l/2.jpg",
   },
@@ -39,9 +32,7 @@ const books = [
     id: 2,
     title: "The Psychology of Graphic Design Pricing",
     author: "Sarah Psych",
-    category: "Graphic Design",
     price: 20.59,
-    rating: 4.0,
     image:
       "https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1553383690l/2657.jpg",
   },
