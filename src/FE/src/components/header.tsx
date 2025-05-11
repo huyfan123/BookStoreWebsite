@@ -37,22 +37,19 @@ const navItems = ["Home", "Store", "About", "Contact"];
 
 interface BookstoreNavbarProps {
   numberOfItems: number;
-  loginStatus: boolean;
 }
 
 export default function BookstoreNavbar({
   numberOfItems,
-  loginStatus,
 }: BookstoreNavbarProps) {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   // const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'));
-
   useEffect(() => {
-    setIsLoggedIn(loginStatus);
-  }, [loginStatus]);
+    setIsLoggedIn(document.cookie.includes("username"));
+  }, []);
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
   const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) =>
@@ -70,6 +67,15 @@ export default function BookstoreNavbar({
   };
   const handleLogout = () => {
     setIsLoggedIn(false);
+    document.cookie =
+      "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "fullname=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "email=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "phonenumber=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "address=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     handleCloseMenu();
   };
 

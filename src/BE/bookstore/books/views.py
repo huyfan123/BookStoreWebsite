@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.pagination import CursorPagination
 from .models import Book
-from .serializers import BookSerializer
+from .serializers import BookSerializer, BookDetailSerializer
 
 def book_list(request):
     # Get the limit (number of records to fetch) from query parameters
@@ -26,7 +26,7 @@ def book_list(request):
     return JsonResponse(list(books), safe=False)  # Return the data as JSON
 
 class BookCursorPagination(CursorPagination):
-    page_size = 10  # Items per page
+    page_size = 30  # Items per page
     ordering = 'bookId'  # Order by 'id' field
 
 # Book list with pagination
@@ -35,8 +35,25 @@ class BookListAPIView(ListAPIView):
     serializer_class = BookSerializer
     pagination_class = BookCursorPagination  # Use custom pagination
 
+class LoadBookAPIView(APIView):
+    def get(self, request):
+        bookId = request.query_params.get('bookId', None)
+        if not bookId:
+            return Response({"error": "bookId is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Fetch the book by bookId
+            book = Book.objects.get(bookId=bookId)
+        except Book.DoesNotExist:
+            # Return a 404 if the book does not exist
+            return Response({"error": "Book not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Serialize and return the book information
+        serializer = BookDetailSerializer(book)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 class FilterBookCursorPagination(CursorPagination):
-    page_size = 10  # Items per page
+    page_size = 30  # Items per page
     ordering = 'bookId'  # Order by 'id' field
 
 class FilterBooksAPIView(APIView):
@@ -73,14 +90,25 @@ class FilterBooksAPIView(APIView):
 
         # Return paginated response
         return paginator.get_paginated_response(serializer.data)   
+    
+class SearchBookCursorPagination(CursorPagination):
+    page_size = 30  # Items per page
+    ordering = 'bookId'  # Order by 'id' field
+    
 # Search Books API
 class SearchBooksAPIView(APIView):
     def get(self, request):
         title_query = request.query_params.get('title', None)
         if title_query:
             books = Book.objects.filter(title__icontains=title_query)
-            serializer = BookSerializer(books, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+            # Apply cursor pagination
+            paginator = SearchBookCursorPagination()
+            paginator.page_size = 30  # Set page size
+            paginated_books = paginator.paginate_queryset(books, request)
+
+            serializer = BookSerializer(paginated_books, many=True)
+            return paginator.get_paginated_response(serializer.data)  
         return Response({"error": "Title query parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
 # Create Book API

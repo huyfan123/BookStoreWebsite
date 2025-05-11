@@ -82,7 +82,7 @@ export default function Home() {
     const navigate = useNavigate();
 
     const handleCardClick = () => {
-      navigate(`/details/${book.id}`, { state: { book } });
+      navigate(`/details/?book-id=${book.bookId}`, { state: { book } });
     };
     return (
       <Box

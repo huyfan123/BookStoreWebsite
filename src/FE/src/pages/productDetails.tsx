@@ -1,48 +1,154 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Card,
-  CardContent,
-  Typography,
-  Grid,
+  Box,
   Button,
+  CircularProgress,
+  Grid,
   Tab,
   Tabs,
-  Box,
+  Typography,
 } from "@mui/material";
-import { mockBookDetails } from "../components/mockData";
 import Header from "../components/header";
-import { useState } from "react";
 import Footer from "../components/footer";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import api from "../apis/api";
+
+interface BookDetailsData {
+  title: string;
+  author: string;
+  description: string;
+  price: string;
+  coverImage: string;
+  publisher: string;
+  publishedDate: string;
+  isbn: string;
+  genres: string[];
+  bookFormat: string;
+  series: string;
+}
 
 const BookDetails: React.FC = () => {
-  const { state } = useLocation();
-  const { book } = state || {};
-  const { id } = useParams();
+  // Extract the query string
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const bookId = queryParams.get("book-id"); // Get the 'book-id' parameter
 
-  // if (!book) {
-  //   return <Typography variant="h5">Book not found for ID: {id}</Typography>;
-  // }
+  const [bookDetails, setBookDetails] = useState<BookDetailsData | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tabValue, setTabValue] = useState(0);
+
+  useEffect(() => {
+    if (!bookId) {
+      setError("Book ID is missing in the URL.");
+      setLoading(false);
+      return;
+    }
+
+    const fetchBookDetails = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // API call to fetch book details using bookId
+        const response = await api.get(`/books/book-info/?bookId=${bookId}`);
+        const data = response.data;
+
+        // Convert publishDate to dd-mm-yyyy format
+        if (data.publishDate) {
+          const dateParts = data.publishDate.split("-"); // Split yyyy-mm-dd
+          data.publishDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`; // Reformat to dd-mm-yyyy
+        }
+
+        // Handle genres field if it's a string representation of a list
+        if (typeof data.genres === "string") {
+          try {
+            // Replace single quotes with double quotes and parse as JSON
+            data.genres = JSON.parse(data.genres.replace(/'/g, '"'));
+          } catch (err) {
+            console.error("Failed to parse genres field:", err);
+            data.genres = []; // Fallback to an empty array if parsing fails
+          }
+        }
+
+        setBookDetails(data);
+      } catch (err) {
+        console.error("Error fetching book details:", err);
+        setError("Failed to fetch book details.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookDetails();
+  }, [bookId]);
+
+  const handleTabChange = (event: React.ChangeEvent<{}>, newValue: number) => {
+    setTabValue(newValue);
+  };
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          textAlign: "center",
+        }}
+      >
+        <Typography variant="h5" color="error">
+          {error}
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (!bookDetails) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          textAlign: "center",
+        }}
+      >
+        <Typography variant="h5">Book not found for ID: {bookId}</Typography>
+      </Box>
+    );
+  }
 
   const {
     title,
     author,
     description,
     price,
-    coverImage,
+    coverImg,
     publisher,
-    publishedDate,
+    publishDate,
     isbn,
     genres,
     bookFormat,
     series,
-  } = mockBookDetails;
-
-  const [tabValue, setTabValue] = useState(0);
-
-  const handleTabChange = (event: React.ChangeEvent<{}>, newValue: number) => {
-    setTabValue(newValue);
-  };
+  } = bookDetails;
 
   return (
     <>
@@ -72,7 +178,7 @@ const BookDetails: React.FC = () => {
             }}
           >
             <img
-              src={coverImage}
+              src={coverImg}
               alt={title}
               style={{
                 borderRadius: "8px",
@@ -83,20 +189,25 @@ const BookDetails: React.FC = () => {
 
           {/* Right Section: Book Details */}
           <Grid item xs={12} sm={6}>
-            <Typography variant="h4" gutterBottom>
+            <Typography variant="h3" gutterBottom>
               {title}
             </Typography>
             <Typography variant="subtitle1" color="textSecondary" gutterBottom>
               By {author}
             </Typography>
-            <Typography variant="h6" color="primary" gutterBottom>
+            <Typography
+              variant="h4"
+              color="primary"
+              sx={{ fontWeight: "bold" }}
+              gutterBottom
+            >
               {price}
             </Typography>
             <Typography variant="subtitle1" color="textSecondary" gutterBottom>
               Series: {series}
             </Typography>
             <Typography variant="body2" color="textSecondary" gutterBottom>
-              Published Date: {publishedDate}
+              Published Date: {publishDate}
             </Typography>
             <Typography variant="body2" color="textSecondary" gutterBottom>
               Genres: {genres.join(", ")}

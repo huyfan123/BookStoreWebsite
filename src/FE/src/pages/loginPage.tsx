@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import api from "../apis/api";
 import {
   Box,
   Button,
@@ -15,21 +16,55 @@ import registerImg from "../assets/Images/registerImage.jpeg";
 const LoginRegisterForm: React.FC = () => {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+    fullname: "",
+    phonenumber: "",
+    address: "",
+    email: "",
+    confirmPassword: "",
+  });
   const [passwordStrength, setPasswordStrength] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [passwordStrengthVisible, setPasswordStrengthVisible] = useState(false);
 
   const handleChangeForm = () => {
     setIsLogin(!isLogin);
+    setError(null); // Clear any previous errors
+    setFormData({
+      username: "",
+      password: "",
+      fullname: "",
+      phonenumber: "",
+      address: "",
+      email: "",
+      confirmPassword: "",
+    }); // Reset form data
   };
 
-  const handleSubmitForm = (event: React.FormEvent) => {
-    event.preventDefault(); // Prevents default form submission
-    navigate("/", { state: isLogin });
+  const handleInputChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = event.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    // Dynamically check password strength for password field
+    if (name === "password") {
+      setPasswordStrength(checkPasswordStrength(value));
+    }
+
+    // Check if passwords match
+    if (name === "confirmPassword" && value !== formData.password) {
+      setError("Passwords do not match");
+    } else {
+      setError(null);
+    }
   };
 
-  // Password strength checker function
   const checkPasswordStrength = (password: string): string => {
     if (password.length < 8) {
       return "Weak";
@@ -45,23 +80,54 @@ const LoginRegisterForm: React.FC = () => {
     return "Medium";
   };
 
-  const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value;
-    setPassword(value);
-    setPasswordStrength(checkPasswordStrength(value)); // Update password strength dynamically
+  const handleLogin = async () => {
+    try {
+      const response = await api.post("accounts/login/", {
+        username: formData.username,
+        password: formData.password,
+      });
+
+      // Assuming the API response contains user information in `response.data.user`
+      const userInfo = response.data;
+
+      // Optional: Store non-sensitive user info in a regular cookie
+      document.cookie = `username=${userInfo.username}; path=/; max-age=604800`; // 1 week expiry
+      document.cookie = `email=${userInfo.email}; path=/; max-age=604800`; // 1 week expiry
+      document.cookie = `fullname=${userInfo.fullname}; path=/; max-age=604800`; // 1 week expiry
+      document.cookie = `phonenumber=${userInfo.phonenumber}; path=/; max-age=604800`; // 1 week expiry
+      document.cookie = `address=${userInfo.address}; path=/; max-age=604800`; // 1 week expiry
+
+      navigate("/"); // Redirect to home page
+    } catch (err: any) {
+      console.error("Login failed:", err);
+      setError(
+        err.response?.data?.message || "Failed to log in. Please try again."
+      );
+    }
   };
 
-  const handleConfirmPasswordChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const value = event.target.value;
-    setConfirmPassword(value);
-
-    // Check if password and confirm password match
-    if (password && value !== password) {
+  const handleSignUp = async () => {
+    if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
-    } else {
-      setError(null);
+      return;
+    }
+
+    try {
+      const response = await api.post("accounts/create/", {
+        fullname: formData.fullname,
+        username: formData.username,
+        phonenumber: formData.phonenumber,
+        address: formData.address,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      setIsLogin(true); // Switch to login form
+    } catch (err: any) {
+      console.error("Sign Up failed:", err);
+      setError(
+        err.response?.data?.message || "Failed to register. Please try again."
+      );
     }
   };
 
@@ -74,7 +140,7 @@ const LoginRegisterForm: React.FC = () => {
       case "Strong":
         return "green";
       default:
-        return "inherit"; // Default text color
+        return "inherit";
     }
   };
 
@@ -114,7 +180,7 @@ const LoginRegisterForm: React.FC = () => {
         >
           <Box
             component="img"
-            src={isLogin ? loginImg : registerImg} // Replace with the actual path to your image
+            src={isLogin ? loginImg : registerImg}
             alt="Bookstore Illustration"
             sx={{
               maxHeight: "300px",
@@ -124,7 +190,7 @@ const LoginRegisterForm: React.FC = () => {
             }}
           />
           <Typography variant="h5" align="center">
-            {isLogin ? "Welcome Back!" : "Welcome to Our Bookstore!"}
+            {isLogin ? "Welcome Back!" : "Welcome to our bookstore!"}
           </Typography>
         </Grid>
 
@@ -144,21 +210,27 @@ const LoginRegisterForm: React.FC = () => {
           <Typography variant="h4" gutterBottom>
             {isLogin ? "Hello Again!" : "Create an Account"}
           </Typography>
-          <form style={{ width: "100%" }} onSubmit={(e) => handleSubmitForm(e)}>
+          <form style={{ width: "100%" }}>
             {isLogin ? (
               <>
                 <TextField
                   fullWidth
                   label="Username or Email"
+                  name="username"
                   variant="outlined"
                   margin="normal"
+                  value={formData.username}
+                  onChange={handleInputChange}
                 />
                 <TextField
                   fullWidth
                   label="Password"
+                  name="password"
                   type="password"
                   variant="outlined"
                   margin="normal"
+                  value={formData.password}
+                  onChange={handleInputChange}
                 />
               </>
             ) : (
@@ -167,18 +239,24 @@ const LoginRegisterForm: React.FC = () => {
                   <TextField
                     fullWidth
                     label="Full Name"
+                    name="fullname"
                     variant="outlined"
                     margin="normal"
                     required
+                    value={formData.fullname}
+                    onChange={handleInputChange}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="Account Name"
+                    name="username"
                     variant="outlined"
                     margin="normal"
                     required
+                    value={formData.username}
+                    onChange={handleInputChange}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -186,18 +264,24 @@ const LoginRegisterForm: React.FC = () => {
                     fullWidth
                     type="tel"
                     label="Phone Number"
+                    name="phonenumber"
                     variant="outlined"
                     margin="normal"
                     required
+                    value={formData.phonenumber}
+                    onChange={handleInputChange}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="Address"
+                    name="address"
                     variant="outlined"
                     margin="normal"
                     required
+                    value={formData.address}
+                    onChange={handleInputChange}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -205,41 +289,50 @@ const LoginRegisterForm: React.FC = () => {
                     fullWidth
                     type="email"
                     label="Email"
+                    name="email"
                     variant="outlined"
                     margin="normal"
                     required
+                    value={formData.email}
+                    onChange={handleInputChange}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="Password"
+                    name="password"
                     type="password"
                     variant="outlined"
                     margin="normal"
-                    onChange={handlePasswordChange}
+                    onChange={handleInputChange}
+                    onFocus={() => setPasswordStrengthVisible(true)}
+                    onBlur={() => setPasswordStrengthVisible(false)}
                     required
                   />
-                  <Typography variant="body2">
-                    <span>Strength: </span>
-                    <span
-                      style={{
-                        color: getPasswordStrengthColor(passwordStrength),
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {passwordStrength}
-                    </span>
-                  </Typography>
+                  {passwordStrengthVisible && (
+                    <Typography variant="body2">
+                      <span>Strength: </span>
+                      <span
+                        style={{
+                          color: getPasswordStrengthColor(passwordStrength),
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {passwordStrength}
+                      </span>
+                    </Typography>
+                  )}
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="Confirm Password"
+                    name="confirmPassword"
                     type="password"
                     variant="outlined"
                     margin="normal"
-                    onChange={handleConfirmPasswordChange}
+                    onChange={handleInputChange}
                     required
                   />
                   {error && (
@@ -261,13 +354,30 @@ const LoginRegisterForm: React.FC = () => {
               <Link href="#" variant="body2">
                 {isLogin ? "Forgot Password?" : ""}
               </Link>
-              <Button variant="contained" color="primary" type="submit">
-                {isLogin ? "Sign In" : "Sign Up"}
-              </Button>
+              {isLogin && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleLogin}
+                  type="button"
+                >
+                  Sign In
+                </Button>
+              )}
+              {!isLogin && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSignUp}
+                  type="button"
+                >
+                  Sign Up
+                </Button>
+              )}
             </Box>
           </form>
           <Button
-            onClick={() => handleChangeForm()}
+            onClick={handleChangeForm}
             sx={{ marginTop: 2 }}
             color="secondary"
             variant="text"

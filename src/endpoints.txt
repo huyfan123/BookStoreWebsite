@@ -3,7 +3,7 @@ http://127.0.0.1:8000/api/
 Endpoints template
 -Account: 
 	+Login:
-		* send GET {
+		* send GET accounts/login/{
 			"username": "huyfan",
 			"password": "123"
 		}
@@ -19,7 +19,7 @@ Endpoints template
 		}
 		
 	+Register/ Create account (use for admin): 
-		* send POST {
+		* send POST accounts/create/ {
 			"username": "newbie",
 			"password": "156",
 			"email": "bob@example.com",
@@ -145,6 +145,33 @@ Endpoints template
 				},	
 				{}
 			]
+		}
+		
+	+Book details
+		*GET books/book-info
+			params
+			{
+				"bookId" = "1.Harry_Potter_and_the_Half_Blood_Prince" 
+			}
+			
+		return
+		{
+			"bookId": "1.Harry_Potter_and_the_Half_Blood_Prince",
+			"title": "Harry Potter and the Half-Blood Prince",
+			"series": "Harry Potter #6",
+			"author": "J.K. Rowling",
+			"description": "The war against Voldemort is not going well; even Muggle governments are noticing. Ron scans the obituary pages of the Daily Prophet, looking for familiar names. Dumbledore is absent from Hogwarts for long stretches of time, and the Order of the Phoenix has already suffered losses.And yet . . .As in all wars, life goes on. The Weasley twins expand their business. Sixth-year students learn to Apparate - and lose a few eyebrows in the process. Teenagers flirt and fight and fall in love. Classes are never straightforward, through Harry receives some extraordinary help from the mysterious Half-Blood Prince.So it's the home front that takes center stage in the multilayered sixth installment of the story of Harry Potter. Here at Hogwarts, Harry will search for the full and complete story of the boy who became Lord Voldemort - and thereby find what may be his only vulnerability.",
+			"language": "English",
+			"isbn": "9999999999999",
+			"genres": "['Fantasy', 'Young Adult', 'Fiction', 'Magic', 'Childrens', 'Adventure', 'Audiobook', 'Middle Grade', 'Classics', 'Science Fiction Fantasy']",
+			"characters": "['Draco Malfoy', 'Ron Weasley', 'Petunia Dursley', 'Vernon Dursley', 'Dudley Dursley', 'Severus Snape', 'Lord Voldemort', 'Neville Longbottom', 'Fred Weasley', 'George Weasley', 'Ginny Weasley', 'Arthur Weasley', 'Molly Weasley', 'Cornelius Fudge', 'Peter Pettigrew', 'Fleur Delacour', 'Bellatrix Lestrange', 'Bill Weasley', 'Luna Lovegood', 'Nymphadora Tonks', 'Kreacher', 'Narcissa Malfoy', 'Horace Slughorn', 'Albus Dumbledore', 'Harry Potter', 'Hermione Granger', 'Madam Malkin', 'Romilda Vane']",
+			"bookFormat": "Paperback",
+			"edition": "",
+			"pages": 652,
+			"publishDate": "2006-09-16",
+			"awards": "['Locus Award Nominee for Best Young Adult Novel (2006)', 'Audie Award for Audiobook of the Year (2006)', 'British Book of the Year (2006)']",
+			"coverImg": "https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1587697303l/1._SX318_.jpg",
+			"price": "9.45"
 		}
 		
 	+Find book

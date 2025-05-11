@@ -1,49 +1,35 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import api from "../apis/api";
 import {
-  AppBar,
-  Toolbar,
   Typography,
   Container,
   Button,
   Box,
-  TextField,
-  InputAdornment,
-  Pagination,
   Tooltip,
+  InputBase,
+  IconButton,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { Search } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Header from "../components/header";
 import BookFilters from "../components/filter";
 import Footer from "../components/footer";
 import AddShoppingCartOutlinedIcon from "@mui/icons-material/AddShoppingCartOutlined";
 
-const books = [
-  {
-    id: 1,
-    title: "Work for Money, Design for Love",
-    author: "John Designer",
-    price: 22.0,
-    image:
-      "https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1546910265l/2.jpg",
-  },
-  {
-    id: 2,
-    title: "The Psychology of Graphic Design Pricing",
-    author: "Sarah Psych",
-    price: 20.59,
-    image:
-      "https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1553383690l/2657.jpg",
-  },
-  // Add more books as needed...
-];
+interface Book {
+  bookId: string;
+  title: string;
+  author: string;
+  price: string;
+  coverImg: string;
+}
 
 function BookCard({ book, onAddToCart }) {
   const navigate = useNavigate();
 
   const handleCardClick = () => {
-    navigate(`/details/${book.id}`, { state: { book } });
+    navigate(`/details/?book-id=${book.bookId}`, { state: { book } });
   };
   return (
     <Box
@@ -57,7 +43,7 @@ function BookCard({ book, onAddToCart }) {
       }}
     >
       <img
-        src={book.image}
+        src={book.coverImg}
         alt={book.title}
         style={{
           borderRadius: "8px",
@@ -107,32 +93,78 @@ function BookCard({ book, onAddToCart }) {
 }
 
 export default function BookStore() {
+  const [books, setBooks] = useState<Book[]>([]);
   const [cartItems, setCartItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [page, setPage] = useState(1);
-  const itemsPerPage = 8;
+
+  const [nextPage, setNextPage] = useState<string | null>(null);
+  // const [previousPage, setPreviousPage] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const navigate = useNavigate(); // Initialize useNavigate
+  const location = useLocation(); // Initialize useLocation
+
+  const fetchBooks = async (url: string) => {
+    try {
+      setLoading(true);
+      const response = await api.get(url); // Make an API call
+      const { results, next, previous } = response.data;
+
+      // Append the new books to the existing list of books
+      setBooks((prevBooks) => [...prevBooks, ...results]);
+      setNextPage(next); // Update "Next" page URL
+      // setPreviousPage(previous); // Update "Previous" page URL
+    } catch (error) {
+      console.error("Error fetching books:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial fetch on mount
+  useEffect(() => {
+    fetchBooks("books/"); // Initial API endpoint (relative path)
+  }, []);
 
   const handleAddToCart = (book) => {
     setCartItems([...cartItems, book]);
   };
 
-  const filteredBooks = books.filter((book) => {
-    const matchesSearch =
-      book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      book.author.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      selectedCategory === "All" || book.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const handleSearch = () => {
+    // Update the URL with the new search query
+    navigate(`?search=${encodeURIComponent(searchQuery)}`);
 
-  const paginatedBooks = filteredBooks.slice(
-    (page - 1) * itemsPerPage,
-    page * itemsPerPage
-  );
+    // Reset books and fetch based on the search query
+    setBooks([]);
+    fetchBooks(`books/search/?title=${encodeURIComponent(searchQuery)}`);
+  };
 
   const handleFiltersChange = (filters) => {
     console.log("Applied filters:", filters);
+
+    // Build query parameters based on filters
+    const { priceRange, language, genre } = filters;
+    let queryParams = "";
+
+    if (priceRange && priceRange.length === 2) {
+      queryParams += `min_price=${priceRange[0]}&max_price=${priceRange[1]}&`;
+    }
+
+    if (language && language !== "All") {
+      queryParams += `language=${encodeURIComponent(language)}&`;
+    }
+
+    if (genre && genre !== "All") {
+      queryParams += `genre=${encodeURIComponent(genre)}&`;
+    }
+
+    // Remove trailing '&' or '?' if present
+    queryParams = queryParams.replace(/&$/, "");
+
+    // Reset the books list and fetch books with new filters
+    setBooks([]); // Clear current books to show only filtered results
+    fetchBooks(`books/filter/?${queryParams}`);
   };
 
   return (
@@ -144,46 +176,82 @@ export default function BookStore() {
 
         {/* Main Content */}
         <Box sx={{ flexGrow: 1 }}>
-          <AppBar position="static" color="default" elevation={0}>
-            <Toolbar>
-              <TextField
-                variant="outlined"
-                size="small"
-                placeholder="Search books..."
-                sx={{
-                  flexGrow: 1,
-                  maxWidth: 500,
-                  mr: 2,
-                  "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search />
-                    </InputAdornment>
-                  ),
-                }}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              mt: 2,
+              mb: 2,
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                borderRadius: "24px",
+                backgroundColor: "#f0f0f0",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                padding: "4px 8px",
+                maxWidth: "500px",
+                width: "100%",
+              }}
+            >
+              <InputBase
+                placeholder="Search book..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                sx={{
+                  flexGrow: 1,
+                  marginLeft: "8px",
+                  fontSize: "16px",
+                }}
               />
-            </Toolbar>
-          </AppBar>
+              <IconButton
+                onClick={handleSearch}
+                sx={{
+                  backgroundColor: "#6c63ff",
+                  color: "#fff",
+                  borderRadius: "50%",
+                  width: "40px",
+                  height: "40px",
+                  "&:hover": {
+                    backgroundColor: "#5a54d6",
+                  },
+                }}
+              >
+                <Search />
+              </IconButton>
+            </Box>
+          </Box>
 
           <Container maxWidth="xl" sx={{ p: 3 }}>
             <Grid container spacing={3}>
-              {paginatedBooks.map((book) => (
-                <Grid xs={12} sm={6} md={4} lg={3} key={book.id}>
+              {books.map((book) => (
+                <Grid xs={12} sm={6} md={4} lg={3} key={book.bookId}>
                   <BookCard book={book} onAddToCart={handleAddToCart} />
                 </Grid>
               ))}
             </Grid>
             <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-              <Pagination
-                count={Math.ceil(filteredBooks.length / itemsPerPage)}
-                page={page}
-                onChange={(e, value) => setPage(value)}
-                color="primary"
-              />
+              <Button
+                variant="outlined"
+                onClick={() =>
+                  nextPage &&
+                  fetchBooks(nextPage.replace("http://127.0.0.1:8000/api/", ""))
+                }
+                sx={{
+                  my: 1,
+                  width: "auto", // Prevent full-width
+                  flexShrink: 0, // Prevent shrinking in flex containers
+                  px: 2, // Horizontal padding
+                  minWidth: "unset", // Override default min-width
+                  whiteSpace: "nowrap", // Prevent text wrapping
+                }}
+                disabled={!nextPage}
+              >
+                Load more
+              </Button>
             </Box>
           </Container>
         </Box>

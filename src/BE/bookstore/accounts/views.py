@@ -2,18 +2,20 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.decorators import api_view
 from rest_framework import status
 from .models import Account
 from .serializers import AccountSerializer
 import json
 
 # Fetch all accounts
+@api_view(['GET'])
 def account_list(request):
     accounts = Account.objects.all().values()
     return JsonResponse(list(accounts), safe=False)
 
 # Add a new account
-@csrf_exempt
+@api_view(['POST'])
 def create_account(request):
     if request.method == 'POST':
         try:
@@ -53,13 +55,50 @@ def login(request):
                 return JsonResponse({'error': 'Invalid username or password'}, status=401)
 
             # If credentials are valid, return a success response
-            return JsonResponse({'message': 'Login successful', 'username': account.username,"fullname": account.fullname, "email": account.email, "phoneNum": account.phonenumber,"address":account.address,'role': account.role}, status=200)
+            return JsonResponse({'username': account.username,"fullname": account.fullname, "email": account.email, "phonenumber": account.phonenumber,"address":account.address,'role': account.role}, status=200)
         
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
     
     # If not POST, return a method not allowed error
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+# Edit Account API (Function-based view with partial updates)
+@csrf_exempt
+@api_view(['PATCH'])
+def edit_account(request):
+    username = request.query_params.get('username', None)
+    if not username:
+        return JsonResponse({"error": "Username is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Fetch the account by username
+        account = Account.objects.get(username=username)
+    except Account.DoesNotExist:
+        return JsonResponse({"error": "Account not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    # Perform partial update
+    serializer = AccountSerializer(account, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return JsonResponse({"message": "Account updated successfully"}, status=status.HTTP_200_OK)
+    return JsonResponse({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+# Delete Account API (Function-based view)
+@csrf_exempt
+@api_view(['DELETE'])
+def delete_account(request):
+    username = request.query_params.get('username', None)
+    if not username:
+        return JsonResponse({"error": "Username is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Fetch the account by username
+        account = Account.objects.get(username=username)
+        account.delete()
+        return JsonResponse({"message": "Account deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+    except Account.DoesNotExist:
+        return JsonResponse({"error": "Account not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
 # Create Account API for admin
