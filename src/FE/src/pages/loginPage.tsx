@@ -10,6 +10,7 @@ import {
   Link,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import loginImg from "../assets/Images/loginImage.jpeg";
 import registerImg from "../assets/Images/registerImage.jpeg";
 
@@ -97,9 +98,14 @@ const LoginRegisterForm: React.FC = () => {
       document.cookie = `phonenumber=${userInfo.phonenumber}; path=/; max-age=604800`; // 1 week expiry
       document.cookie = `address=${userInfo.address}; path=/; max-age=604800`; // 1 week expiry
 
-      navigate("/"); // Redirect to home page
+      if (userInfo.role === "admin")
+        navigate("/admin"); // Redirect to admin page
+      else navigate("/"); // Redirect to home page
+
+      toast.success("Login successful!");
     } catch (err: any) {
       console.error("Login failed:", err);
+      toast.error("Failed to log in. Please try again.");
       setError(
         err.response?.data?.message || "Failed to log in. Please try again."
       );
@@ -108,7 +114,7 @@ const LoginRegisterForm: React.FC = () => {
 
   const handleSignUp = async () => {
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
+      toast.error("Passwords do not match");
       return;
     }
 
@@ -123,8 +129,10 @@ const LoginRegisterForm: React.FC = () => {
       });
 
       setIsLogin(true); // Switch to login form
+      toast.success("Registration successful! Please log in.");
     } catch (err: any) {
       console.error("Sign Up failed:", err);
+      toast.error("Failed to register. Please try again.");
       setError(
         err.response?.data?.message || "Failed to register. Please try again."
       );

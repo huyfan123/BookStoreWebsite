@@ -8,12 +8,14 @@ import {
   Tabs,
   Tab,
   Box,
+  Chip,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import Header from "../components/header";
 import api from "../apis/api";
+import { toast } from "react-toastify";
 
 const CardStyled = styled(Card)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -38,6 +40,61 @@ export const UserDashboard: React.FC = () => {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [orders, setOrders] = useState([]);
+  const [filter, setFilter] = useState("All");
+
+  useEffect(() => {
+    // Fetch orders from the API when the My Orders tab is active
+    if (tabValue === 1) {
+      fetchOrders();
+    }
+  }, [tabValue]);
+
+  const fetchOrders = async () => {
+    try {
+      const username = document.cookie
+        .split(";")
+        .find((item) => item.includes("username"))
+        ?.split("=")[1];
+      const response = await api.get(`/orders?username=${username}`);
+      setOrders(response.data);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      toast.error("Failed to fetch orders.");
+    }
+  };
+
+  const filteredOrders = orders.filter((order) =>
+    filter === "All" ? true : order.status === filter
+  );
+
+  const handleCancelOrder = async (orderId: number) => {
+    try {
+      window.confirm(
+        "Are you sure you want to cancel this order? This action cannot be undone."
+      );
+
+      await api.put(
+        "/orders/status/",
+        {},
+        {
+          params: {
+            order_id: orderId,
+            username: username,
+          },
+        }
+      );
+
+      toast.success("Order cancelled successfully!");
+      // Update the status in the local orders state
+      fetchOrders();
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      toast.error("Failed to cancel order.");
+    }
+  };
 
   useEffect(() => {
     setUsername(
@@ -90,12 +147,33 @@ export const UserDashboard: React.FC = () => {
       })
       .then((response) => {
         console.log("User information updated successfully:", response.data);
+        toast.success("User information updated successfully");
       })
       .catch((error) => {
         console.error("Error updating user information:", error);
+        toast.error("Failed to update user information");
       });
+  };
 
-    alert("User information saved successfully!");
+  const handleChangePassword = () => {
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match!");
+      return;
+    }
+
+    // Call the API to save the user information
+    api
+      .patch("/accounts/edit/?username=" + username, {
+        password,
+      })
+      .then((response) => {
+        console.log("Change password successfully:", response.data);
+        toast.success("Change password successfully");
+      })
+      .catch((error) => {
+        console.error("Error changing password:", error);
+        toast.error("Failed to change password");
+      });
   };
 
   const handleDelete = () => {
@@ -114,21 +192,23 @@ export const UserDashboard: React.FC = () => {
       .delete("/accounts/delete/?username=" + username)
       .then((response) => {
         console.log("User account deleted successfully:", response.data);
-        alert("User account deleted successfully!");
         // Redirect to login page or home page
         window.location.href = "/";
+        toast.success("User account deleted successfully");
       })
       .catch((error) => {
         console.error("Error deleting user account:", error);
+        toast.error("Failed to delete user account");
       });
   };
 
   return (
-    <Box>
+    <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       <Header />
+
       <Box sx={{ px: 30, py: 10 }}>
         <Typography variant="h4" gutterBottom>
-          User Profile Management
+          Account Management
         </Typography>
         <CardStyled>
           <Tabs
@@ -138,6 +218,7 @@ export const UserDashboard: React.FC = () => {
             textColor="primary"
           >
             <Tab label="Personal Info" />
+            <Tab label="Order history" />
             <Tab label="Settings" />
           </Tabs>
 
@@ -213,8 +294,140 @@ export const UserDashboard: React.FC = () => {
             </Grid>
           </TabPanel>
 
-          {/* Settings Tab */}
+          {/* Order History Tab */}
           <TabPanel value={tabValue} index={1}>
+            {/* <Typography variant="h6" gutterBottom>
+              Order history
+            </Typography> */}
+            {/* Order Filters */}
+            <Box sx={{ display: "flex", gap: 2, my: 2 }}>
+              {["All", "Shipping", "Delivered", "Processing", "Cancelled"].map(
+                (status) => (
+                  <Button
+                    key={status}
+                    variant={filter === status ? "contained" : "outlined"}
+                    onClick={() => setFilter(status)}
+                  >
+                    {status}
+                  </Button>
+                )
+              )}
+            </Box>
+            {/* Order List */}
+            {filteredOrders.map((order) => (
+              <CardStyled key={order.orderId} sx={{ mb: 2 }}>
+                <Typography variant="h6">Order #{order.orderId}</Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Order Date: {new Date(order.orderDate).toLocaleDateString()}
+                </Typography>
+                <Typography variant="body2">
+                  Status:{" "}
+                  <Chip
+                    label={order.status}
+                    color={
+                      order.status === "Delivered"
+                        ? "success"
+                        : order.status === "Shipping" ||
+                          order.status === "Processing"
+                        ? "primary"
+                        : order.status === "Cancelled"
+                        ? "error"
+                        : "default"
+                    }
+                  />
+                </Typography>
+                <Typography variant="body1">
+                  Receiver: {order.receiverName} | Phone: {order.receiverPhone}
+                </Typography>
+                <Box>
+                  {order.items.map((item) => (
+                    <Box
+                      key={item.orderItemId}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        my: 2,
+                      }}
+                    >
+                      <img
+                        src={item.coverImg}
+                        alt={item.bookId}
+                        style={{
+                          width: "80px",
+                          height: "80px",
+                          objectFit: "cover",
+                        }}
+                      />
+                      <Box>
+                        <Typography variant="body1">{item.bookId}</Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          {item.price}$ × {item.quantity}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mt: 2,
+                  }}
+                >
+                  <Typography variant="subtitle1">
+                    Total: {order.totalAmount}$
+                  </Typography>
+
+                  {/* Conditional Buttons based on Order Status */}
+                  {order.status === "Processing" && (
+                    <Box sx={{ display: "flex", gap: 2 }}>
+                      <Button
+                        variant="contained"
+                        color="error"
+                        onClick={() => {
+                          // Add cancel order functionality here
+                          handleCancelOrder(order.orderId);
+                        }}
+                      >
+                        Cancel Order
+                      </Button>
+                    </Box>
+                  )}
+
+                  {(order.status === "Delivered" ||
+                    order.status === "Cancelled") && (
+                    <Box sx={{ display: "flex", gap: 2 }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => {
+                          // Add buy again functionality here
+                          console.log(
+                            `Buy again for order: ${order.orderNumber}`
+                          );
+                        }}
+                      >
+                        Buy Again
+                      </Button>
+                    </Box>
+                  )}
+
+                  {order.status === "Shipping" && (
+                    <Box sx={{ display: "flex", gap: 2 }}>
+                      <Button variant="contained" color="error" disabled>
+                        Cancel Order
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
+              </CardStyled>
+            ))}
+          </TabPanel>
+
+          {/* Settings Tab */}
+          <TabPanel value={tabValue} index={2}>
             <Typography variant="h6" gutterBottom>
               Settings
             </Typography>
@@ -228,6 +441,8 @@ export const UserDashboard: React.FC = () => {
                   label="New Password"
                   type="password"
                   variant="outlined"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -236,6 +451,8 @@ export const UserDashboard: React.FC = () => {
                   label="Confirm Password"
                   type="password"
                   variant="outlined"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                 />
               </Grid>
               <Grid
@@ -247,7 +464,13 @@ export const UserDashboard: React.FC = () => {
                   justifyContent: "space-between",
                 }}
               >
-                <Button variant="contained" color="primary" onClick={() => {}}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => {
+                    handleChangePassword();
+                  }}
+                >
                   <SaveOutlinedIcon style={{ marginRight: "8px" }} />
                   Save
                 </Button>

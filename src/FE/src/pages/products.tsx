@@ -16,6 +16,7 @@ import Header from "../components/header";
 import BookFilters from "../components/filter";
 import Footer from "../components/footer";
 import AddShoppingCartOutlinedIcon from "@mui/icons-material/AddShoppingCartOutlined";
+import { toast } from "react-toastify";
 
 interface Book {
   bookId: string;
@@ -30,6 +31,29 @@ function BookCard({ book, onAddToCart }) {
 
   const handleCardClick = () => {
     navigate(`/details/?book-id=${book.bookId}`, { state: { book } });
+  };
+
+  const handleAddToCart = () => {
+    if (document.cookie.indexOf("username") === -1) {
+      toast.error("Please log in your account to add items to your cart.");
+      return;
+    }
+
+    api
+      .post("cart/add/", {
+        username: document.cookie
+          .split(";")
+          .find((cookie) => cookie.trim().startsWith("username="))
+          .split("=")[1],
+        bookId: book.bookId,
+        quantity: 1,
+      })
+      .then((response) => {
+        toast.success("Book added to cart successfully.");
+      })
+      .catch((error) => {
+        toast.error("Error adding book to cart.");
+      });
   };
   return (
     <Box
@@ -81,7 +105,8 @@ function BookCard({ book, onAddToCart }) {
           size="small"
           onClick={(event) => {
             event.stopPropagation(); // Prevents the click from propagating to the parent Box
-            onAddToCart(book);
+            handleAddToCart();
+            onAddToCart(book); // Call the parent function to update the cart
           }}
         >
           <AddShoppingCartOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
@@ -169,7 +194,7 @@ export default function BookStore() {
 
   return (
     <Box>
-      <Header numberOfItems={cartItems.length} />
+      <Header checkPoint={cartItems.length} />
       <Box sx={{ display: "flex" }}>
         {/* Filter Sidebar */}
         <BookFilters onApplyFilters={handleFiltersChange} />

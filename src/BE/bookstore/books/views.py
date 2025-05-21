@@ -114,7 +114,7 @@ class SearchBooksAPIView(APIView):
 # Create Book API
 class CreateBookAPIView(APIView):
     def post(self, request):
-        serializer = BookSerializer(data=request.data)
+        serializer = BookDetailSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "Book created successfully"}, status=status.HTTP_201_CREATED)
@@ -131,7 +131,7 @@ class UpdateBookAPIView(APIView):
         except Book.DoesNotExist:
             return Response({"error": "Book not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = BookSerializer(book, data=request.data, partial=True)  # Enable partial updates
+        serializer = BookDetailSerializer(book, data=request.data, partial=True)  # Enable partial updates
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "Book updated successfully"}, status=status.HTTP_200_OK)

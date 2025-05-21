@@ -1,0 +1,130 @@
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from .models import Order, OrderItem
+from .serializers import OrderSerializer, OrderItemSerializer
+from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import ValidationError
+from books.models import Book
+
+
+# View User's Orders and Order Items
+class UserOrderView(APIView):
+    def get(self, request):
+        username = request.query_params.get("username")
+        if not username:
+            return Response({"error": "Username is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch orders and their items for the given username
+        orders = Order.objects.filter(username=username).prefetch_related("items")
+        serializer = OrderSerializer(orders, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+# Create an Order (For Users)
+class CreateOrderView(APIView):
+    def post(self, request, *args, **kwargs):
+        try:
+            # Extract order data from the request
+            username = request.data.get("username")
+            receiver_name = request.data.get("receiverName")
+            receiver_phone = request.data.get("receiverPhone")
+            shipping_address = request.data.get("shippingAddress")
+            payment_method = request.data.get("paymentMethod")
+            items_data = request.data.get("items", [])
+
+            # Create the order
+            order = Order.objects.create(
+                username=username,
+                receiverName=receiver_name,
+                receiverPhone=receiver_phone,
+                shippingAddress=shipping_address,
+                paymentMethod=payment_method,
+                status="Processing",
+                totalAmount=0,  # We'll calculate this later
+            )
+
+            total_amount = 0
+
+            # Add items to the order
+            for item_data in items_data:
+                book_id = item_data.get("book_id")  # Extract book ID from request
+                book = get_object_or_404(Book, bookId=book_id)  # Fetch the Book instance
+
+                quantity = item_data.get("quantity")
+                price = item_data.get("price")
+                total_price = price * quantity
+
+                # Create the OrderItem
+                OrderItem.objects.create(
+                    order=order,
+                    book=book,  # Use the Book instance
+                    quantity=quantity,
+                    price=price,
+                    totalPrice=total_price,
+                )
+
+                # Update the total order amount
+                total_amount += total_price
+
+            # Update the order's total amount
+            order.totalAmount = total_amount
+            order.save()
+
+            return Response({"message": "Order created successfully!"}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# Edit an Order (For Admins)
+class EditOrderView(APIView):
+    # permission_classes = [IsAdminUser]
+
+    def put(self, request):
+        order_id = request.query_params.get("order_id")
+        if not order_id:
+            raise ValidationError({"error": "order_id is required as a query parameter."})
+
+        order = get_object_or_404(Order, id=order_id)
+
+        serializer = OrderSerializer(order, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# Edit Order Status (For Users - Cancel Only)
+class EditOrderStatusView(APIView):
+    def put(self, request):
+        username = request.query_params.get("username")
+        order_id = request.query_params.get("order_id")
+
+        print(f"Username: {username}, Order ID: {order_id}")
+        if not username or not order_id:
+            return Response({"error": "Username and order_id are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Fetch the order based on username and order_id
+            order = Order.objects.get(orderId=order_id, username=username)
+        except Order.DoesNotExist:
+            return Response({"error": "Order not found or you don't have permission to modify this order"}, status=status.HTTP_404_NOT_FOUND)
+
+        if order.status != "Processing":
+            return Response({"error": "Only orders in 'Processing' status can be cancelled"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update the status to 'Cancelled'
+        order.status = "Cancelled"
+        order.save()
+        return Response({"message": "Order cancelled successfully"}, status=status.HTTP_200_OK)
+
+# Delete an Order (For Admins)
+class DeleteOrderView(APIView):
+    # permission_classes = [IsAdminUser]
+
+    def delete(self, request):
+        order_id = request.query_params.get("order_id")
+        if not order_id:
+            raise ValidationError({"error": "order_id is required as a query parameter."})
+
+        order = get_object_or_404(Order, id=order_id)
+        order.delete()
+        return Response({"message": "Order deleted successfully"}, status=status.HTTP_204_NO_CONTENT)

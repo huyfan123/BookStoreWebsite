@@ -6,10 +6,26 @@ import BookDetails from "./pages/productDetails";
 import LoginRegisterForm from "./pages/loginPage";
 import UserDashboard from "./pages/userDashboard";
 import UserManagement from "./pages/adminDashboard";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { Bounce } from "react-toastify";
 
 function App() {
   return (
     <BrowserRouter>
+      <ToastContainer
+        position="bottom-right"
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover={false}
+        theme="colored"
+        transition={Bounce}
+      />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/products" element={<Product />} />

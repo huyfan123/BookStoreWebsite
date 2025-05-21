@@ -152,7 +152,7 @@ const BookDetails: React.FC = () => {
 
   return (
     <>
-      <Header numberOfItems={0} loginStatus={false} />
+      <Header checkPoint={0} />
       <Box
         sx={{
           padding: "20px",
@@ -201,10 +201,10 @@ const BookDetails: React.FC = () => {
               sx={{ fontWeight: "bold" }}
               gutterBottom
             >
-              {price}
+              {price} $
             </Typography>
             <Typography variant="subtitle1" color="textSecondary" gutterBottom>
-              Series: {series}
+              Series: {series || "None"}
             </Typography>
             <Typography variant="body2" color="textSecondary" gutterBottom>
               Published Date: {publishDate}

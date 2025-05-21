@@ -13,7 +13,6 @@ export default function Footer() {
         backgroundColor: "primary.main",
         color: "white",
         py: 6,
-        mt: 4,
         width: "100%",
       }}
     >

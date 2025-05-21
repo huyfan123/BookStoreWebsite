@@ -150,7 +150,7 @@ export default function Home() {
         alignItems: "center",
       }}
     >
-      <Header numberOfItems={0} loginStatus={isLogin} />
+      <Header />
 
       <Box
         sx={{

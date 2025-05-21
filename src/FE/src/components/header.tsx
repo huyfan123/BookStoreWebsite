@@ -21,6 +21,8 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { toast } from "react-toastify";
+import api from "../apis/api";
 
 const theme = createTheme({
   palette: {
@@ -36,20 +38,41 @@ const theme = createTheme({
 const navItems = ["Home", "Store", "About", "Contact"];
 
 interface BookstoreNavbarProps {
-  numberOfItems: number;
+  checkPoint: number;
 }
 
-export default function BookstoreNavbar({
-  numberOfItems,
-}: BookstoreNavbarProps) {
+export default function BookstoreNavbar({ checkPoint }: BookstoreNavbarProps) {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [numberOfItems, setNumberOfItems] = React.useState();
+
   // const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'));
   useEffect(() => {
     setIsLoggedIn(document.cookie.includes("username"));
-  }, []);
+    const handleGetNumOfCartItems = async () => {
+      api
+        .get("cart/load", {
+          params: {
+            username: document.cookie
+              .split(";")
+              .find((cookie) => cookie.trim().startsWith("username="))
+              ?.split("=")[1],
+          },
+        })
+        .then((response) => {
+          setNumberOfItems(response.data.length);
+        })
+        .catch((error) => {
+          console.error("Error fetching cart items:", error);
+        });
+    };
+
+    if (document.cookie.includes("username")) {
+      handleGetNumOfCartItems();
+    }
+  }, [checkPoint]);
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
   const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) =>
@@ -76,13 +99,15 @@ export default function BookstoreNavbar({
       "phonenumber=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     document.cookie =
       "address=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    toast.success("Logout successful");
+    navigate("/");
     handleCloseMenu();
   };
 
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ textAlign: "center" }}>
       <Typography variant="h6" sx={{ my: 2 }}>
-        Book Haven
+        BOOKSTORE
       </Typography>
       <List>
         {navItems.map((item) => (
