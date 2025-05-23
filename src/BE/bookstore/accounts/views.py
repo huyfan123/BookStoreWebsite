@@ -12,7 +12,7 @@ import json
 @api_view(['GET'])
 def account_list(request):
     accounts = Account.objects.all().values()
-    return JsonResponse(list(accounts), safe=False)
+    return Response(accounts, status=status.HTTP_200_OK)
 
 # Add a new account
 @api_view(['POST'])
