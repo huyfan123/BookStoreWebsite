@@ -6,13 +6,23 @@ from rest_framework.decorators import api_view
 from rest_framework import status
 from .models import Account
 from .serializers import AccountSerializer
+from rest_framework.pagination import CursorPagination
 import json
+from django.contrib.auth.hashers import make_password,check_password
+
+# Cursor pagination class
+class AccountCursorPagination(CursorPagination):
+    page_size = 10
+    ordering = 'username'
 
 # Fetch all accounts
 @api_view(['GET'])
 def account_list(request):
-    accounts = Account.objects.all().values()
-    return Response(accounts, status=status.HTTP_200_OK)
+    accounts = Account.objects.all().order_by('username')
+    paginator = AccountCursorPagination()
+    result_page = paginator.paginate_queryset(accounts, request)
+    serializer = AccountSerializer(result_page, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 # Add a new account
 @api_view(['POST'])
@@ -20,9 +30,13 @@ def create_account(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
+            
+            raw_password = data.get('password')
+            hashed_password = make_password(raw_password)  # Hash the password
+            
             new_account = Account(
                 username=data.get('username'),
-                password=data.get('password'),  # In a real app, hash the password!
+                password=hashed_password,
                 email=data.get('email'),
                 fullname=data.get('fullname'),
                 phonenumber=data.get('phonenumber'),
@@ -42,8 +56,7 @@ def login(request):
             # Parse JSON request body
             data = json.loads(request.body)
             username = data.get('username')
-            password = data.get('password')
-            
+            password = make_password(data.get('password'))
             # Check if the account exists
             try:
                 account = Account.objects.get(username=username)
@@ -51,8 +64,8 @@ def login(request):
                 return JsonResponse({'error': 'Invalid username or password'}, status=401)
             
             # Verify the password (in production, use hashed passwords)
-            if account.password != password:
-                return JsonResponse({'error': 'Invalid username or password'}, status=401)
+            if not check_password(data.get('password'), account.password):
+                return JsonResponse({'error': 'Wrong password'}, status=401)
 
             # If credentials are valid, return a success response
             return JsonResponse({'username': account.username,"fullname": account.fullname, "email": account.email, "phonenumber": account.phonenumber,"address":account.address,'role': account.role}, status=200)
@@ -128,7 +141,7 @@ class UpdateAccountAPIView(APIView):
             return Response({"message": "Account updated successfully"}, status=status.HTTP_200_OK)
         return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-# Search Account API for admin
+# Search Account API for admin with cursor pagination
 class SearchAccountAPIView(APIView):
     def get(self, request):
         filters = {}
@@ -146,10 +159,26 @@ class SearchAccountAPIView(APIView):
         if fullname:
             filters['fullname__icontains'] = fullname
 
-        accounts = Account.objects.filter(**filters)
-        serializer = AccountSerializer(accounts, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        accounts = Account.objects.filter(**filters).order_by('username')
+        paginator = AccountCursorPagination()
+        result_page = paginator.paginate_queryset(accounts, request)
+        serializer = AccountSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
+# Get account details by userId (username)    
+class LoadAccountAPIView(APIView):
+    def get(self, request):
+        username = request.query_params.get('username', None)
+        if not username:
+            return Response({"error": "Username is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            account = Account.objects.get(username=username)
+            serializer = AccountSerializer(account)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Account.DoesNotExist:
+            return Response({"error": "Account not found"}, status=status.HTTP_404_NOT_FOUND)
+        
 # Delete Account API for admin (using query params)
 class DeleteAccountAPIView(APIView):
     def delete(self, request):

@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import CreateAccountAPIView, UpdateAccountAPIView, SearchAccountAPIView, DeleteAccountAPIView
+from .views import CreateAccountAPIView, UpdateAccountAPIView, SearchAccountAPIView, DeleteAccountAPIView, LoadAccountAPIView
 
 urlpatterns = [
     path('accounts/create/', views.create_account, name='create_account'),  # Add new account
@@ -12,4 +12,5 @@ urlpatterns = [
     path('admin/accounts/update/', UpdateAccountAPIView.as_view(), name='update_account'), 
     path('admin/accounts/search/', SearchAccountAPIView.as_view(), name='search_account'),
     path('admin/accounts/delete/', DeleteAccountAPIView.as_view(), name='delete_account'), 
+    path('admin/accounts/account-info/', LoadAccountAPIView.as_view(), name='load_account_info'),  # Get account details by userId (username)
 ]

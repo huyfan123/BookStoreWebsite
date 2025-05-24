@@ -7,6 +7,7 @@ from .serializers import OrderSerializer, OrderItemSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
 from books.models import Book
+from rest_framework.pagination import CursorPagination
 
 
 # View User's Orders and Order Items
@@ -20,6 +21,31 @@ class UserOrderView(APIView):
         orders = Order.objects.filter(username=username).prefetch_related("items")
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+# List all orders with orderId, username, totalAmount, and status (for admin)
+class OrderListAdminView(APIView):
+    def get(self, request):
+        class SimpleOrderCursorPagination(CursorPagination):
+            page_size = 10
+            ordering = 'orderId'
+        paginator = SimpleOrderCursorPagination()
+        orders = Order.objects.all().order_by('orderId').values('orderId', 'username', 'totalAmount', 'status')
+        result_page = paginator.paginate_queryset(orders, request)
+        return paginator.get_paginated_response(result_page)
+
+class SearchOrderView(APIView):
+    def get(self, request):
+        order_id = request.query_params.get("order_id")
+
+        if not order_id:
+            return Response({"error": "order_id are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            order = Order.objects.get(orderId=order_id)
+            serializer = OrderSerializer(order)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Order.DoesNotExist:
+            return Response({"error": "Order not found or you don't have permission to view this order"}, status=status.HTTP_404_NOT_FOUND)
 
 # Create an Order (For Users)
 class CreateOrderView(APIView):
@@ -79,12 +105,12 @@ class CreateOrderView(APIView):
 class EditOrderView(APIView):
     # permission_classes = [IsAdminUser]
 
-    def put(self, request):
+    def patch(self, request):
         order_id = request.query_params.get("order_id")
         if not order_id:
             raise ValidationError({"error": "order_id is required as a query parameter."})
 
-        order = get_object_or_404(Order, id=order_id)
+        order = get_object_or_404(Order, orderId=order_id)
 
         serializer = OrderSerializer(order, data=request.data, partial=True)
         if serializer.is_valid():
@@ -125,6 +151,33 @@ class DeleteOrderView(APIView):
         if not order_id:
             raise ValidationError({"error": "order_id is required as a query parameter."})
 
-        order = get_object_or_404(Order, id=order_id)
+        order = get_object_or_404(Order, orderId=order_id)
         order.delete()
         return Response({"message": "Order deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+# Get all information of a specific order (for admin, without order items)
+class OrderDetailAdminView(APIView):
+    def get(self, request):
+        order_id = request.query_params.get('order_id')
+        if not order_id:
+            return Response({'error': 'order_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            order = Order.objects.get(orderId=order_id)
+            # Exclude order items from the response
+            data = {
+                'orderId': order.orderId,
+                'username': order.username,
+                'receiverName': order.receiverName,
+                'receiverPhone': order.receiverPhone,
+                'orderDate': order.orderDate,
+                'status': order.status,
+                'totalAmount': order.totalAmount,
+                'shippingAddress': order.shippingAddress,
+                'paymentMethod': order.paymentMethod,
+                'createdAt': order.createdAt,
+                'updatedAt': order.updatedAt,
+            }
+            return Response(data, status=status.HTTP_200_OK)
+        except Order.DoesNotExist:
+            return Response({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
+

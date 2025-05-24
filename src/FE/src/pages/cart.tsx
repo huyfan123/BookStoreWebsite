@@ -25,6 +25,10 @@ const CartPage: React.FC = () => {
   const [receiverPhone, setReceiverPhone] = useState("");
   const [address, setAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Credit Card");
+  const [applyDiscount, setApplyDiscount] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [discountAmount, setDiscountAmount] = useState(4); // Example discount amount
+  const [shippingFee, setShippingFee] = useState(5); // Example shipping fee
 
   const handleRemoveItem = (cartId: number) => {
     setCartItems(cartItems.filter((item) => item.cartId !== cartId));
@@ -61,7 +65,10 @@ const CartPage: React.FC = () => {
       0
     );
 
-  const calculateTotal = () => calculateSubtotal() + 5 - 4; // Example (Shipping $5 - Discount $4)
+  const calculateTotal = () => {
+    const total = calculateSubtotal() + shippingFee - discountAmount;
+    return total > 0 ? total : 0;
+  };
 
   const handleCleanCart = () => {
     // loop through books in cart and delete them
@@ -74,6 +81,18 @@ const CartPage: React.FC = () => {
         });
     });
     setCartItems([]);
+  };
+
+  const handleApplyCoupon = () => {
+    if (couponCode === "DISCOUNT10") {
+      setApplyDiscount(true);
+      setDiscountAmount(2); // Example discount amount
+      toast.success("Coupon applied successfully!");
+    } else {
+      setApplyDiscount(false);
+      setDiscountAmount(0);
+      toast.error("Invalid coupon code.");
+    }
   };
 
   const handlePurchase = () => {
@@ -347,18 +366,19 @@ const CartPage: React.FC = () => {
 
               <Divider sx={{ marginY: "1rem" }} />
 
-              <Typography variant="h6" gutterBottom>
-                Coupon Code
-              </Typography>
               <TextField
                 label="Coupon Code"
                 fullWidth
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                placeholder="Enter your coupon code"
                 sx={{ marginBottom: "1rem" }}
               />
               <Button
                 variant="contained"
                 color="primary"
                 fullWidth
+                onClick={handleApplyCoupon}
                 sx={{ marginBottom: "1rem" }}
               >
                 Apply
@@ -379,10 +399,14 @@ const CartPage: React.FC = () => {
                 <Typography variant="body1">Shipping:</Typography>
                 <Typography variant="body1">5.00 $</Typography>
               </Box>
-              <Box display="flex" justifyContent="space-between" mb={1}>
-                <Typography variant="body1">Discount:</Typography>
-                <Typography variant="body1">-4.00 $</Typography>
-              </Box>
+              {applyDiscount && (
+                <Box display="flex" justifyContent="space-between" mb={1}>
+                  <Typography variant="body1">Discount:</Typography>
+                  <Typography variant="body1">
+                    -{discountAmount.toFixed(2)} $
+                  </Typography>
+                </Box>
+              )}
               <Divider sx={{ marginY: "1rem" }} />
               <Box display="flex" justifyContent="space-between">
                 <Typography variant="h6">Cart Total:</Typography>

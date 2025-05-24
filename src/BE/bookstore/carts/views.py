@@ -6,7 +6,10 @@ from .models import Cart
 from books.models import Book
 from .serializers import CartSerializer
 from accounts.models import Account
-
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Cart
 
 # Add to Cart
 class AddToCartView(APIView):
@@ -57,11 +60,6 @@ class EditCartView(APIView):
         )
 
 # Delete Book in Cart
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .models import Cart
-
 class DeleteCartView(APIView):
     def delete(self, request):
         cart_id = request.query_params.get('cartId')  # Get `cartId` from query params

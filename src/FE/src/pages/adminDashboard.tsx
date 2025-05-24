@@ -97,71 +97,105 @@ const AdminDashboard = () => {
   const [prevPage, setPrevPage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
   const [openDialog, setOpenDialog] = useState(false);
-  const [newBook, setNewBook] = useState({
-    bookId: "",
-    title: "",
-    series: "",
-    author: "",
-    description: "",
-    language: "",
-    isbn: "",
-    genres: "",
-    characters: "",
-    bookFormat: "",
-    edition: "",
-    pages: "",
-    publisher: "",
-    publishDate: "",
-    awards: "",
-    setting: "",
-    coverImg: "",
-    price: "",
-  });
+
+  const getInitialItem = (section) => {
+    if (section === "books") {
+      return {
+        bookId: "",
+        title: "",
+        series: "",
+        author: "",
+        description: "",
+        language: "",
+        isbn: "",
+        genres: "",
+        characters: "",
+        bookFormat: "",
+        edition: "",
+        pages: "",
+        publisher: "",
+        publishDate: "",
+        awards: "",
+        setting: "",
+        coverImg: "",
+        price: "",
+      };
+    }
+    if (section === "accounts") {
+      return {
+        username: "",
+        password: "",
+        fullname: "",
+        email: "",
+        phonenumber: "",
+        address: "",
+        role: "user",
+      };
+    }
+    // orders
+    return {
+      orderId: "",
+      customer: "",
+      total: "",
+      status: "Processing",
+    };
+  };
+  const [newItem, setNewItem] = useState(getInitialItem(selectedSection));
+  const accountRoles = ["user", "admin"]; // Add or modify based on your backend
 
   // For menu actions
   const [anchorEl, setAnchorEl] = useState(null);
-  const [selectedBook, setSelectedBook] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const handleMenuClick = (event, book) => {
     setAnchorEl(event.currentTarget);
-    setSelectedBook(book);
+    setSelectedItem(book);
   };
 
   const handleMenuClose = () => {
     setAnchorEl(null);
-    setSelectedBook(null);
+    setSelectedItem(null);
   };
 
   const handleDelete = async () => {
-    if (!selectedBook) return; // Ensure a book is selected
+    if (!selectedItem) return; // Ensure a book is selected
 
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete the book "${selectedBook.title}"?`
+      `Are you sure you want to delete this item ?`
     );
     if (!confirmDelete) return; // If the user cancels, stop here
 
     try {
+      const endpointMap = {
+        books: "/books/delete/",
+        orders: "/orders/delete/",
+        accounts: "/admin/accounts/delete/",
+      };
       // Make an API DELETE request to the "/books/delete/" endpoint
-      await api.delete("/books/delete/", {
-        params: { book_id: selectedBook.bookId }, // Pass book_id as a parameter
+      await api.delete(endpointMap[selectedSection], {
+        params:
+          selectedSection === "books"
+            ? { book_id: selectedItem.bookId }
+            : selectedSection === "accounts"
+            ? { username: selectedItem.username }
+            : { order_id: selectedItem.orderId },
       });
 
       // Handle success
-      toast.success(`Delete book "${selectedBook.title}" successfully!`);
-      console.log(`Book "${selectedBook.title}" deleted successfully`);
+      toast.success(`Delete item successfully!`);
+      console.log(`Item deleted successfully`);
 
       // Refresh the book list
       fetchData();
 
-      // Clear the selectedBook state and close the menu
-      setSelectedBook(null);
+      // Clear the selected item state and close the menu
+      setSelectedItem(null);
       handleMenuClose();
     } catch (error) {
       // Handle errors
-      console.error("Failed to delete book:", error);
-      toast.error("Failed to delete book. Please try again.");
+      console.error("Failed to delete item:", error);
+      toast.error("Failed to delete item. Please try again.");
     }
   };
 
@@ -169,24 +203,19 @@ const AdminDashboard = () => {
   const fetchData = async (pageUrl = null) => {
     setLoading(true);
     try {
-      const endpointMap = {
-        books: "/books/",
-        orders: "/orders/",
-        accounts: "/admin/accounts/",
-      };
+      let response;
+      if (pageUrl) {
+        response = await api.get(pageUrl);
+      } else {
+        const endpointMap = {
+          books: "/books/",
+          orders: "/orders/list/",
+          accounts: "/admin/accounts/",
+        };
+        response = await api.get(endpointMap[selectedSection]);
+      }
 
-      const response = await api.get(
-        pageUrl || selectedSection === "books"
-          ? endpointMap.books
-          : selectedSection === "orders"
-          ? endpointMap.orders
-          : endpointMap.accounts
-        // {
-        //   params: { search: searchQuery },
-        // }
-      );
-      if (selectedSection === "books") setData(response.data.results);
-      else setData(response.data);
+      setData(response.data.results);
 
       setNextPage(response.data.next);
       setPrevPage(response.data.previous);
@@ -199,6 +228,7 @@ const AdminDashboard = () => {
   // Fetch books on mount
   useEffect(() => {
     fetchData();
+    setNewItem(getInitialItem(selectedSection));
   }, [selectedSection]);
 
   const handleSearchBook = async (e) => {
@@ -212,9 +242,18 @@ const AdminDashboard = () => {
     }
 
     try {
-      // Call the "/books/search/" API endpoint with the searchQuery as a parameter
-      const response = await api.get("/books/search/", {
-        params: { title: searchQuery },
+      const endpointMap = {
+        books: "/books/search/",
+        accounts: "/admin/accounts/search/",
+        orders: "/orders/search/",
+      };
+      const response = await api.get(endpointMap[selectedSection], {
+        params:
+          selectedSection === "books"
+            ? { title: searchQuery }
+            : selectedSection === "accounts"
+            ? { username: searchQuery }
+            : { order_id: searchQuery },
       });
       setData(response.data.results); // Update the books state with the search results
       setNextPage(response.data.next);
@@ -239,35 +278,20 @@ const AdminDashboard = () => {
     handleCleanAddForm();
   };
 
-  const handleAddBook = async () => {
+  const handleAddItem = async () => {
     try {
-      // Make an API POST request to the "/books/create/" endpoint with the `newBook` object
-      const response = await api.post("/books/create/", {
-        bookId: newBook.bookId,
-        title: newBook.title,
-        series: newBook.series,
-        author: newBook.author,
-        description: newBook.description,
-        language: newBook.language,
-        isbn: newBook.isbn,
-        genres: newBook.genres,
-        characters: newBook.characters,
-        bookFormat: newBook.bookFormat,
-        edition: newBook.edition,
-        pages: parseInt(newBook.pages), // Ensure pages is an integer
-        publisher: newBook.publisher,
-        publishDate: newBook.publishDate,
-        awards: newBook.awards,
-        setting: newBook.setting,
-        coverImg: newBook.coverImg,
-        price: parseFloat(newBook.price), // Ensure price is a float
-      });
+      // Make an API POST request to the "/books/create/" endpoint with the `newItem` object
+      const endpointMap = {
+        books: "/books/create/",
+        accounts: "/admin/accounts/create/",
+      };
+      const response = await api.post(endpointMap[selectedSection], newItem);
 
       // Handle success: log the response, refresh the book list, close the dialog, and reset the form
-      console.log("Book added successfully:", response.data);
-      toast.success("Book added successfully!");
+      console.log("Item added successfully:", response.data);
+      toast.success("Item added successfully!");
 
-      // Optionally refresh the book list
+      // Optionally refresh the list
       fetchData();
 
       // Close the dialog
@@ -285,83 +309,94 @@ const AdminDashboard = () => {
   };
 
   const handleCleanAddForm = () => {
-    // Reset the `newBook` state to clear the form
-    setNewBook({
-      bookId: "",
-      title: "",
-      series: "",
-      author: "",
-      description: "",
-      language: "",
-      isbn: "",
-      genres: "",
-      characters: "",
-      bookFormat: "",
-      edition: "",
-      pages: "",
-      publisher: "",
-      publishDate: "",
-      awards: "",
-      setting: "",
-      coverImg: "",
-      price: "",
-    });
+    // Reset the `newItem` state to clear the form
+    setNewItem(getInitialItem(selectedSection));
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewBook({ ...newBook, [name]: value });
+    setNewItem({ ...newItem, [name]: value });
   };
 
   const [openEditDialog, setOpenEditDialog] = useState(false); // For Edit Dialog
-  const [editBook, setEditBook] = useState(null); // Book data for editing
+  const [editItem, setEditItem] = useState(null); // Book data for editing
 
   // Fetch book information for editing
-  const fetchBookInfo = async (bookId) => {
+  const fetchItemInfo = async (itemId) => {
+    console.log("Fetching item info for:", itemId);
     try {
-      const response = await api.get(`/books/book-info/`, {
-        params: { bookId },
-      });
-      setEditBook(response.data); // Populate the state with book data
+      const response = await api.get(
+        selectedSection === "books"
+          ? `/books/book-info/`
+          : selectedSection === "accounts"
+          ? "admin/accounts/account-info/"
+          : "orders/details/",
+        {
+          params:
+            selectedSection === "books"
+              ? { bookId: itemId }
+              : selectedSection === "accounts"
+              ? { username: itemId }
+              : { order_id: itemId },
+        }
+      );
+      setEditItem(response.data); // Populate the state with book data
       setOpenEditDialog(true); // Open the dialog
     } catch (error) {
-      console.error("Failed to fetch book info:", error);
-      toast.error("Failed to load book information.");
+      console.error("Failed to fetch item info:", error);
+      toast.error("Failed to load item information.");
     }
   };
 
   const handleEdit = () => {
-    if (selectedBook) {
-      fetchBookInfo(selectedBook.bookId); // Fetch book info using the selectedBook's bookId
+    if (selectedItem) {
+      if (selectedSection === "books") fetchItemInfo(selectedItem.bookId);
+      // Fetch book info using the selectedItem's bookId
+      else if (selectedSection === "accounts")
+        fetchItemInfo(selectedItem.username);
+      // Fetch account info using the selectedItem's username
+      else if (selectedSection === "orders")
+        fetchItemInfo(selectedItem.orderId); // Fetch order info using the selectedItem's orderId
     }
     handleMenuClose();
   };
 
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
-    setEditBook({ ...editBook, [name]: value }); // Update the editBook state
+    setEditItem({ ...editItem, [name]: value }); // Update the editBook state
   };
 
   const handleSaveEdit = async () => {
     try {
       // Call API to save the updated book information
-      const response = await api.patch(`/books/update/`, editBook, {
-        params: {
-          book_id: editBook.bookId,
-        },
-      }); // Assuming a PATCH endpoint
-      console.log("Book updated successfully:", response.data);
-
+      const response = await api.patch(
+        selectedSection === "books"
+          ? `/books/book-info/`
+          : selectedSection === "accounts"
+          ? "admin/accounts/update/"
+          : "orders/edit/",
+        editItem,
+        {
+          params:
+            selectedSection === "books"
+              ? { bookId: editItem.bookId }
+              : selectedSection === "accounts"
+              ? { username: editItem.username }
+              : { order_id: editItem.orderId },
+        }
+      ); // Assuming a PATCH endpoint
+      toast.success("Update item successfully!");
       setOpenEditDialog(false); // Close the dialog
       fetchData(); // Refresh the book list
     } catch (error) {
-      console.error("Failed to update book:", error);
+      console.error("Failed to update:", error);
+      toast.error("Failed to update item. Please try again.");
     }
   };
 
   const handleCloseEditDialog = () => {
     setOpenEditDialog(false);
-    setEditBook(null); // Clear the editBook state
+    setEditItem(null); // Clear the editBook state
   };
 
   const handleLogout = () => {
@@ -388,7 +423,14 @@ const AdminDashboard = () => {
       <Sidebar setSelectedSection={setSelectedSection} />
 
       {/* Main Content */}
-      <Box flexGrow={1} bgcolor="#f5f5f5" minHeight="100vh">
+      <Box
+        sx={{
+          flexGrow: 1,
+          backgroundColor: "#f5f5f5",
+          minHeight: "100vh",
+          paddingBottom: "64px", // Adjust for AppBar height
+        }}
+      >
         {/* App Bar */}
         <AppBar position="static" color="default" elevation={0}>
           <Toolbar>
@@ -473,60 +515,94 @@ const AdminDashboard = () => {
                 ))}
               </Select>
             </Box> */}
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleDialogOpen}
-            >
-              Add Book
-            </Button>
+            {(selectedSection === "books" ||
+              selectedSection === "accounts") && (
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleDialogOpen}
+              >
+                Add {selectedSection === "books" ? "Book" : "Account"}
+              </Button>
+            )}
           </Box>
         </Container>
 
-        {/* Add Book Dialog */}
+        {/* Add Item Dialog */}
         <Dialog open={openDialog} onClose={handleDialogClose} fullWidth>
-          <DialogTitle>Add new book</DialogTitle>
+          <DialogTitle>
+            Add new{" "}
+            {selectedSection === "books"
+              ? "book"
+              : selectedSection === "accounts"
+              ? "account"
+              : "order"}
+          </DialogTitle>
           <DialogContent>
             <Grid container spacing={2}>
-              {Object.keys(newBook).map((key) => (
+              {Object.keys(newItem).map((key) => (
                 <Grid item xs={12} sm={6} key={key}>
-                  <TextField
-                    margin="dense"
-                    label={key.charAt(0).toUpperCase() + key.slice(1)}
-                    name={key}
-                    fullWidth
-                    value={newBook[key]}
-                    onChange={handleInputChange}
-                    placeholder={
-                      key === "bookId"
-                        ? "Enter unique book ID"
-                        : key === "title"
-                        ? "Enter the book title"
-                        : key === "author"
-                        ? "Enter the author's name"
-                        : key === "price"
-                        ? "Enter price (e.g., 10.99)"
-                        : key === "publishDate"
-                        ? "YYYY-MM-DD (e.g., 2025-01-01)"
-                        : key === "coverImg"
-                        ? "Enter image URL (e.g., https://example.com/image.jpg)"
-                        : key === "genres"
-                        ? "Enter genres separated by commas"
-                        : ""
-                    }
-                    required={
-                      key === "bookId" ||
-                      key === "title" ||
-                      key === "author" ||
-                      key === "publishDate"
-                    } // Make these fields required
-                  />
+                  {key === "role" ? (
+                    <Select
+                      margin="dense"
+                      label="Role"
+                      name="role"
+                      value={newItem.role}
+                      onChange={handleInputChange}
+                      fullWidth
+                      displayEmpty
+                    >
+                      {accountRoles.map((role) => (
+                        <MenuItem value={role} key={role}>
+                          {role.charAt(0).toUpperCase() + role.slice(1)}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  ) : (
+                    <TextField
+                      margin="dense"
+                      label={key.charAt(0).toUpperCase() + key.slice(1)}
+                      name={key}
+                      fullWidth
+                      value={newItem[key]}
+                      onChange={handleInputChange}
+                      placeholder={
+                        key === "bookId"
+                          ? "Enter unique book ID"
+                          : key === "title"
+                          ? "Enter the book title"
+                          : key === "author"
+                          ? "Enter the author's name"
+                          : key === "price"
+                          ? "Enter price (e.g., 10.99)"
+                          : key === "publishDate"
+                          ? "YYYY-MM-DD (e.g., 2025-01-01)"
+                          : key === "coverImg"
+                          ? "Enter image URL (e.g., https://example.com/image.jpg)"
+                          : key === "genres"
+                          ? "Enter genres separated by commas"
+                          : ""
+                      }
+                      required={
+                        (selectedSection === "books" &&
+                          (key === "bookId" ||
+                            key === "title" ||
+                            key === "author" ||
+                            key === "publishDate")) ||
+                        (selectedSection === "accounts" &&
+                          (key === "username" ||
+                            key === "password" ||
+                            key === "fullname" ||
+                            key === "email"))
+                      } // Make these fields required
+                    />
+                  )}
                 </Grid>
               ))}
             </Grid>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleAddBook} color="primary">
+            <Button onClick={handleAddItem} color="primary">
               Add
             </Button>
             <Button onClick={handleDialogClose} color="error">
@@ -537,27 +613,84 @@ const AdminDashboard = () => {
 
         {/* Edit Book Dialog */}
         <Dialog open={openEditDialog} onClose={handleCloseEditDialog} fullWidth>
-          <DialogTitle>Edit Book</DialogTitle>
+          <DialogTitle>
+            Edit{" "}
+            {selectedSection === "books"
+              ? "Book"
+              : selectedSection === "orders"
+              ? "Order"
+              : "Account"}
+          </DialogTitle>
           <DialogContent>
-            {editBook ? (
+            {editItem ? (
               <Grid container spacing={2}>
-                {Object.keys(editBook).map((key) => (
+                {Object.keys(editItem).map((key) => (
                   <Grid item xs={12} sm={6} key={key}>
-                    <TextField
-                      margin="dense"
-                      label={key.charAt(0).toUpperCase() + key.slice(1)}
-                      name={key}
-                      fullWidth
-                      value={editBook[key]}
-                      onChange={handleEditInputChange}
-                      placeholder={
-                        key === "publishDate"
-                          ? "YYYY-MM-DD"
-                          : key === "price"
-                          ? "e.g., 10.99"
-                          : ""
-                      }
-                    />
+                    {selectedSection === "accounts" && key === "role" ? (
+                      <Select
+                        margin="dense"
+                        label="Role"
+                        name="role"
+                        value={editItem.role}
+                        onChange={handleEditInputChange}
+                        fullWidth
+                        displayEmpty
+                      >
+                        {accountRoles.map((role) => (
+                          <MenuItem value={role} key={role}>
+                            {role.charAt(0).toUpperCase() + role.slice(1)}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    ) : selectedSection === "orders" && key === "status" ? (
+                      <Select
+                        label="Status"
+                        name="status"
+                        value={editItem.status}
+                        onChange={handleEditInputChange}
+                        fullWidth
+                      >
+                        <MenuItem value="Processing">Processing</MenuItem>
+                        <MenuItem value="Shipping">Shipping</MenuItem>
+                        <MenuItem value="Delivered">Delivered</MenuItem>
+                        <MenuItem value="Cancelled">Cancelled</MenuItem>
+                      </Select>
+                    ) : (
+                      <TextField
+                        margin="dense"
+                        label={key.charAt(0).toUpperCase() + key.slice(1)}
+                        name={key}
+                        fullWidth
+                        value={
+                          key === "publishDate" ||
+                          key === "orderDate" ||
+                          key === "createdAt" ||
+                          key === "updatedAt"
+                            ? new Date(editItem[key]).toLocaleDateString(
+                                "en-GB"
+                              )
+                            : editItem[key]
+                        }
+                        onChange={handleEditInputChange}
+                        placeholder={
+                          key === "publishDate"
+                            ? "YYYY-MM-DD"
+                            : key === "price"
+                            ? "e.g., 10.99"
+                            : ""
+                        }
+                        // Make bookId, orderId, and username read-only
+                        disabled={
+                          key === "bookId" ||
+                          key === "orderId" ||
+                          key === "username" ||
+                          key === "totalAmount" ||
+                          key === "paymentMethod" ||
+                          key === "createdAt" ||
+                          key === "updatedAt"
+                        }
+                      />
+                    )}
                   </Grid>
                 ))}
               </Grid>
@@ -667,11 +800,18 @@ const AdminDashboard = () => {
                       {selectedSection === "orders" && (
                         <>
                           <TableCell>{item.orderId}</TableCell>
-                          <TableCell>{item.customer}</TableCell>
+                          <TableCell>{item.username}</TableCell>
                           <TableCell>
-                            {item.total ? `${item.total}$` : ""}
+                            {item.totalAmount ? `${item.totalAmount}$` : ""}
                           </TableCell>
                           <TableCell>{item.status}</TableCell>
+                          <TableCell>
+                            <IconButton
+                              onClick={(event) => handleMenuClick(event, item)}
+                            >
+                              <MoreVert />
+                            </IconButton>
+                          </TableCell>
                         </>
                       )}
                       {selectedSection === "accounts" && (
