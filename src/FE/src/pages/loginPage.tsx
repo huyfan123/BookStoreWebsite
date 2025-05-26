@@ -356,13 +356,13 @@ const LoginRegisterForm: React.FC = () => {
               sx={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
+                justifyContent: "flex-end",
                 marginTop: 2,
               }}
             >
-              <Link href="#" variant="body2">
+              {/* <Link href="#" variant="body2">
                 {isLogin ? "Forgot Password?" : ""}
-              </Link>
+              </Link> */}
               {isLogin && (
                 <Button
                   variant="contained"

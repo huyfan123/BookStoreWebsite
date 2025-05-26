@@ -61,12 +61,12 @@ const Sidebar = ({ setSelectedSection }) => {
 
       {/* Navigation Links */}
       <List>
-        <ListItemButton>
+        {/* <ListItemButton>
           <ListItemIcon>
             <Dashboard />
           </ListItemIcon>
           <ListItemText primary="Dashboard" />
-        </ListItemButton>
+        </ListItemButton> */}
         <ListItemButton onClick={() => setSelectedSection("books")}>
           <ListItemIcon>
             <Book />
@@ -238,7 +238,7 @@ const AdminDashboard = () => {
     setNewItem(getInitialItem(selectedSection));
   }, [selectedSection]);
 
-  const handleSearchBook = async (e) => {
+  const handleSearchItem = async (e) => {
     e.preventDefault(); // Prevent default form submission behavior
     setLoading(true);
 
@@ -267,6 +267,16 @@ const AdminDashboard = () => {
       setPrevPage(response.data.previous);
     } catch (error) {
       console.error("Failed to search books:", error);
+      const messages = error.response.data;
+      if (messages) {
+        // console.log(error.response.data.errors);
+        for (const [field, message] of Object.entries(messages)) {
+          // field is the "title", messages is an array of strings
+          toast.error(
+            `${field.charAt(0).toUpperCase() + field.slice(1)}: ${message}`
+          );
+        }
+      }
     }
     setLoading(false);
   };
@@ -482,7 +492,7 @@ const AdminDashboard = () => {
                     borderStyle: "solid",
                   }}
                   aria-label="search"
-                  onClick={handleSearchBook}
+                  onClick={handleSearchItem}
                 >
                   <Search />
                 </IconButton>

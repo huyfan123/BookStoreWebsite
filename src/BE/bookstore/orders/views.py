@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
 from books.models import Book
 from rest_framework.pagination import CursorPagination
+from django.db.models import Q
 
 
 # View User's Orders and Order Items
@@ -33,19 +34,28 @@ class OrderListAdminView(APIView):
         result_page = paginator.paginate_queryset(orders, request)
         return paginator.get_paginated_response(result_page)
 
+# Search for a specific order by orderId or username (for admin)
+class SearchOrderCursorPagination(CursorPagination):
+    page_size = 10
+    ordering = 'orderDate'
+
 class SearchOrderView(APIView):
     def get(self, request):
-        order_id = request.query_params.get("order_id")
+        query = request.query_params.get("order_id", None)
+        if not query:
+            return Response({"error": "order_id is required as a query parameter."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not order_id:
-            return Response({"error": "order_id are required"}, status=status.HTTP_400_BAD_REQUEST)
+        # Try to search by orderId (exact match) or username (partial match)
+        orders = Order.objects.filter(
+            Q(orderId__iexact=query) |
+            Q(username__icontains=query)
+        ).order_by('orderDate')
 
-        try:
-            order = Order.objects.get(orderId=order_id)
-            serializer = OrderSerializer(order)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Order.DoesNotExist:
-            return Response({"error": "Order not found or you don't have permission to view this order"}, status=status.HTTP_404_NOT_FOUND)
+
+        paginator = SearchOrderCursorPagination()
+        result_page = paginator.paginate_queryset(orders, request)
+        serializer = OrderSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 # Create an Order (For Users)
 class CreateOrderView(APIView):

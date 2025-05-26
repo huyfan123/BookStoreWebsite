@@ -156,27 +156,23 @@ class UpdateAccountAPIView(APIView):
 # Search Account API for admin with cursor pagination
 class SearchAccountAPIView(APIView):
     def get(self, request):
-        filters = {}
-        username = request.query_params.get('username', None)
-        email = request.query_params.get('email', None)
-        phonenumber = request.query_params.get('phonenumber', None)
-        fullname = request.query_params.get('fullname', None)
-
-        if username:
-            filters['username__icontains'] = username
-        if email:
-            filters['email__icontains'] = email
-        if phonenumber:
-            filters['phonenumber__icontains'] = phonenumber
-        if fullname:
-            filters['fullname__icontains'] = fullname
-
-        accounts = Account.objects.filter(**filters).order_by('username')
+        query = request.query_params.get('username', None)
+    
+        if query:
+            # Search across username, email, phonenumber, and fullname
+            accounts = Account.objects.filter(
+                Q(username__icontains=query) |
+                Q(email__icontains=query) |
+                Q(phonenumber__icontains=query) |
+                Q(fullname__icontains=query)
+            ).order_by('username')
+        else:
+            accounts = Account.objects.all().order_by('username')
         paginator = AccountCursorPagination()
         result_page = paginator.paginate_queryset(accounts, request)
         serializer = AccountSerializer(result_page, many=True)
         return paginator.get_paginated_response(serializer.data)
-
+    
 # Get account details by userId (username)    
 class LoadAccountAPIView(APIView):
     def get(self, request):

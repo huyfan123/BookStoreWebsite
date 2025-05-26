@@ -407,7 +407,7 @@ export const UserDashboard: React.FC = () => {
                     </Box>
                   )}
 
-                  {(order.status === "Delivered" ||
+                  {/* {(order.status === "Delivered" ||
                     order.status === "Cancelled") && (
                     <Box sx={{ display: "flex", gap: 2 }}>
                       <Button
@@ -423,7 +423,7 @@ export const UserDashboard: React.FC = () => {
                         Buy Again
                       </Button>
                     </Box>
-                  )}
+                  )} */}
 
                   {order.status === "Shipping" && (
                     <Box sx={{ display: "flex", gap: 2 }}>
