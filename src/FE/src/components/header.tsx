@@ -48,7 +48,6 @@ export default function BookstoreNavbar({ checkPoint }: BookstoreNavbarProps) {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [numberOfItems, setNumberOfItems] = React.useState();
 
-  // const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'));
   useEffect(() => {
     setIsLoggedIn(document.cookie.includes("username"));
     const handleGetNumOfCartItems = async () => {
@@ -233,4 +232,3 @@ export default function BookstoreNavbar({ checkPoint }: BookstoreNavbarProps) {
     </ThemeProvider>
   );
 }
-

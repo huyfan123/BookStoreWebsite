@@ -6,6 +6,7 @@ from rest_framework import status
 from rest_framework.pagination import CursorPagination
 from .models import Book
 from .serializers import BookSerializer, BookDetailSerializer
+import random
 
 def book_list(request):
     # Get the limit (number of records to fetch) from query parameters
@@ -149,3 +150,15 @@ class DeleteBookAPIView(APIView):
             return Response({"message": "Book deleted successfully"}, status=status.HTTP_200_OK)
         except Book.DoesNotExist:
             return Response({"error": "Book not found"}, status=status.HTTP_404_NOT_FOUND)
+
+# API to get 3 random books
+class RecommendBooksAPIView(APIView):
+    def get(self, request):
+        book_ids = list(Book.objects.values_list('bookId', flat=True))
+        if len(book_ids) < 3:
+            books = Book.objects.all()
+        else:
+            random_ids = random.sample(book_ids, 3)
+            books = Book.objects.filter(bookId__in=random_ids)
+        serializer = BookSerializer(books, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

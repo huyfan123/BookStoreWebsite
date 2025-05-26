@@ -12,6 +12,7 @@ import Header from "../components/header";
 import Footer from "../components/footer";
 import { useLocation } from "react-router-dom";
 import api from "../apis/api";
+import { toast } from "react-toastify";
 
 interface BookDetailsData {
   title: string;
@@ -32,7 +33,7 @@ const BookDetails: React.FC = () => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const bookId = queryParams.get("book-id"); // Get the 'book-id' parameter
-
+  const [cartItems, setCartItems] = useState([]);
   const [bookDetails, setBookDetails] = useState<BookDetailsData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +86,30 @@ const BookDetails: React.FC = () => {
 
   const handleTabChange = (event: React.ChangeEvent<{}>, newValue: number) => {
     setTabValue(newValue);
+  };
+
+  const handleAddToCart = () => {
+    if (document.cookie.indexOf("username") === -1) {
+      toast.error("Please log in your account to add items to your cart.");
+      return;
+    }
+
+    api
+      .post("cart/add/", {
+        username: document.cookie
+          .split(";")
+          .find((cookie) => cookie.trim().startsWith("username="))
+          .split("=")[1],
+        bookId: bookId,
+        quantity: 1,
+      })
+      .then((response) => {
+        toast.success("Book added to cart successfully.");
+        setCartItems([...cartItems, bookId]);
+      })
+      .catch((error) => {
+        toast.error("Error adding book to cart.");
+      });
   };
 
   if (loading) {
@@ -152,7 +177,7 @@ const BookDetails: React.FC = () => {
 
   return (
     <>
-      <Header checkPoint={0} />
+      <Header checkPoint={cartItems.length} />
       <Box
         sx={{
           padding: "20px",
@@ -217,11 +242,11 @@ const BookDetails: React.FC = () => {
               variant="contained"
               color="primary"
               style={{ marginTop: "20px", marginRight: "10px" }}
+              onClick={() => {
+                handleAddToCart();
+              }}
             >
               Add to Cart
-            </Button>
-            <Button variant="outlined" style={{ marginTop: "20px" }}>
-              Buy Now
             </Button>
           </Grid>
         </Grid>

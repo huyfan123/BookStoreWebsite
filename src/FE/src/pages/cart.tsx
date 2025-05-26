@@ -18,8 +18,10 @@ import api from "../apis/api";
 import { toast } from "react-toastify";
 import Header from "../components/header";
 import Footer from "../components/footer";
+import { useNavigate } from "react-router-dom";
 
 const CartPage: React.FC = () => {
+  const navigate = useNavigate();
   const [cartItems, setCartItems] = useState([]);
   const [receiverName, setReceiverName] = useState("");
   const [receiverPhone, setReceiverPhone] = useState("");
@@ -166,6 +168,11 @@ const CartPage: React.FC = () => {
         );
       })
       .catch(() => {
+        if (!document.cookie.includes("username")) {
+          navigate("/login");
+          toast.error("Please log in to view your cart");
+          return;
+        }
         toast.error("Error fetching cart items");
       });
   }, []);

@@ -37,6 +37,7 @@ import {
   ShoppingCart,
   People,
   Logout,
+  Book,
 } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -68,7 +69,7 @@ const Sidebar = ({ setSelectedSection }) => {
         </ListItemButton>
         <ListItemButton onClick={() => setSelectedSection("books")}>
           <ListItemIcon>
-            <ShoppingCart />
+            <Book />
           </ListItemIcon>
           <ListItemText primary="Books" />
         </ListItemButton>
@@ -225,6 +226,12 @@ const AdminDashboard = () => {
     setLoading(false);
   };
 
+  useEffect(() => {
+    if (!document.cookie.includes("username")) {
+      navigate("/login");
+    }
+  }, []);
+
   // Fetch books on mount
   useEffect(() => {
     fetchData();
@@ -301,10 +308,24 @@ const AdminDashboard = () => {
       handleCleanAddForm();
     } catch (error) {
       // Handle errors: log the error and optionally show an error message
-      console.error("Failed to add book:", error);
-      toast.error(
-        "Failed to add book. Please check the format of required fields and try again."
-      );
+
+      if (selectedSection === "accounts") {
+        const messages = error.response.data.errors;
+        if (messages) {
+          // console.log(error.response.data.errors);
+          for (const [field, message] of Object.entries(messages)) {
+            // field is the "title", messages is an array of strings
+            toast.error(
+              `${field.charAt(0).toUpperCase() + field.slice(1)}: ${message}`
+            );
+          }
+        }
+      } else {
+        console.error("Failed to add item:", error);
+        toast.error(
+          "Failed to add item. Please check the format of required fields and try again."
+        );
+      }
     }
   };
 

@@ -16,6 +16,7 @@ import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import Header from "../components/header";
 import api from "../apis/api";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const CardStyled = styled(Card)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -34,6 +35,7 @@ const TabPanel: React.FC<{ value: number; index: number }> = ({
 };
 
 export const UserDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [tabValue, setTabValue] = useState(0);
   const [username, setUsername] = useState("");
   const [fullname, setFullname] = useState("");
@@ -51,6 +53,15 @@ export const UserDashboard: React.FC = () => {
       fetchOrders();
     }
   }, [tabValue]);
+
+  useEffect(() => {
+    if (!document.cookie.includes("username")) {
+      // Redirect to login page if user is not logged in
+      navigate("/login");
+      toast.error("Please log in to access your dashboard.");
+      return;
+    }
+  }, []);
 
   const fetchOrders = async () => {
     try {

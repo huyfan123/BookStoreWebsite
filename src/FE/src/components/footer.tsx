@@ -4,8 +4,18 @@ import Grid from "@mui/material/Grid2";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import TwitterIcon from "@mui/icons-material/Twitter";
 import InstagramIcon from "@mui/icons-material/Instagram";
+import { useNavigate } from "react-router-dom";
 
 export default function Footer() {
+  const navigate = useNavigate();
+
+  const handleAboutClick = () => {
+    navigate("/?scrollTo=about");
+  };
+  const handleContactClick = () => {
+    navigate("/?scrollTo=contact");
+  };
+
   return (
     <Box
       component="footer"
@@ -43,21 +53,27 @@ export default function Footer() {
               underline="hover"
               display="block"
             >
-              Products
+              Books
             </Link>
             <Link
-              href="/about"
+              component="button"
               color="inherit"
               underline="hover"
               display="block"
+              onClick={() => {
+                handleAboutClick();
+              }}
             >
               About Us
             </Link>
             <Link
-              href="/contact"
+              component="button"
               color="inherit"
               underline="hover"
               display="block"
+              onClick={() => {
+                handleContactClick();
+              }}
             >
               Contact
             </Link>

@@ -103,9 +103,10 @@ const LoginRegisterForm: React.FC = () => {
       else navigate("/"); // Redirect to home page
 
       toast.success("Login successful!");
-    } catch (err: any) {
+    } catch (err) {
       console.error("Login failed:", err);
-      toast.error("Failed to log in. Please try again.");
+      toast.error(err.response.data.error);
+
       setError(
         err.response?.data?.message || "Failed to log in. Please try again."
       );
@@ -130,7 +131,7 @@ const LoginRegisterForm: React.FC = () => {
 
       setIsLogin(true); // Switch to login form
       toast.success("Registration successful! Please log in.");
-    } catch (err: any) {
+    } catch (err) {
       console.error("Sign Up failed:", err);
       toast.error("Failed to register. Please try again.");
       setError(

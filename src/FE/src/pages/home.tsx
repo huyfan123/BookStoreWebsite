@@ -25,11 +25,22 @@ import Container from "@mui/material/Container";
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Tooltip } from "@mui/material";
+import api from "../apis/api";
+import { toast } from "react-toastify";
+import axios from "axios";
 
 export default function Home() {
   const location = useLocation();
+  const navigate = useNavigate();
   const loginStatus = location.state;
   const [isLogin, setIsLogin] = useState(true);
+  const [books, setBooks] = useState([]);
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
 
   useEffect(() => {
     setIsLogin(loginStatus);
@@ -37,9 +48,23 @@ export default function Home() {
 
   const [searchParams] = useSearchParams();
 
+  // this useEffect is used for load recommend books
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const response = await api.get("/books/recommend");
+        setBooks(response.data);
+      } catch (error) {
+        console.error("Error fetching recommended books:", error);
+      }
+    };
+
+    fetchBooks();
+  }, []);
+
   useEffect(() => {
     const scrollTo = searchParams.get("scrollTo");
-    console.log(scrollTo);
+
     if (scrollTo === "about") {
       const aboutSection = document.getElementById("about");
       if (aboutSection) {
@@ -51,32 +76,45 @@ export default function Home() {
         contactSection.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
+    //clear the search params after scrolling
+    const urlWithoutParams = window.location.pathname;
+    window.history.replaceState({}, document.title, urlWithoutParams);
   }, [searchParams]); // Runs when searchParams changes
 
-  const books = [
-    {
-      id: 1,
-      title: "Work for Money, Design for Love",
-      author: "John Designer",
-      image:
-        "https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1546910265l/2.jpg",
-    },
-    {
-      id: 2,
-      title: "The Psychology of Graphic Design Pricing",
-      author: "Sarah Psych",
-      image:
-        "https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1553383690l/2657.jpg",
-    },
+  const handleContactClick = () => {
+    navigate("/?scrollTo=contact");
+  };
 
-    {
-      id: 3,
-      title: "Harry Potter and the Order of the Phoenix",
-      author: "J.K. Rowling, Mary GrandPrÃ© (Illustrator)",
-      image:
-        "https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1546910265l/2.jpg",
-    },
-  ];
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const response = await axios.post(
+        "https://script.google.com/macros/s/AKfycbycpFnM2WQzKUFk6kt_H_fbzDwp2ys2Jh4254feKUCAVro0eL0H2aDVhOR2BPcb4DGMRQ/exec",
+        form,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+
+      if (response.data.success) {
+        toast.success("Message sent successfully!");
+        setForm({ name: "", email: "", phone: "", message: "" });
+      }
+    } catch (error) {
+      toast.error("Error sending message");
+      console.error("Submission error:", error);
+    }
+  };
 
   function BookCard({ book }) {
     const navigate = useNavigate();
@@ -94,7 +132,7 @@ export default function Home() {
         }}
       >
         <img
-          src={book.image}
+          src={book.coverImg}
           alt={book.title}
           style={{
             borderRadius: "8px",
@@ -129,7 +167,9 @@ export default function Home() {
             sx={{ width: "100%" }}
             variant="contained"
             size="small"
-            onClick={() => {}}
+            onClick={() => {
+              navigate(`/details/?book-id=${book.bookId}`, { state: { book } });
+            }}
           >
             View details
             <TrendingFlatOutlinedIcon sx={{ marginLeft: "2px" }} />
@@ -255,7 +295,13 @@ export default function Home() {
                 stories and insightful knowledge. Join us at Book Haven and
                 explore the world of literature like never before!
               </Typography>
-              <Link href="/" sx={{ color: "gray" }}>
+              <Link
+                component={"button"}
+                onClick={() => {
+                  handleContactClick();
+                }}
+                sx={{ color: "gray" }}
+              >
                 Get in touch
               </Link>
             </CardContent>
@@ -300,13 +346,14 @@ export default function Home() {
             Explore your next read
           </Typography>
           <Typography variant="h4" sx={{ fontWeight: "bold" }} gutterBottom>
-            Discover bestsellers and hidden gems
+            Maybe you will like these books
           </Typography>
 
           <Container
             sx={{
               display: "flex",
               flexWrap: "wrap",
+              marginTop: "50px",
               justifyContent: "center",
               alignItems: "center",
               gap: "50px",
@@ -326,7 +373,7 @@ export default function Home() {
               xs: "20px",
               md: "100px",
             },
-            marginTop: "100px",
+
             display: "flex",
             flexDirection: {
               xs: "column", // Stack vertically on mobile
@@ -378,6 +425,9 @@ export default function Home() {
               We're here to assist you with any inquiries.
             </Typography>
             <Box
+              component={"form"}
+              method="post"
+              onSubmit={(event) => handleSubmit(event)}
               sx={{
                 "& > :not(style)": { m: 1 },
                 display: "flex",
@@ -387,16 +437,17 @@ export default function Home() {
             >
               <TextField
                 id="nameField"
+                name="name"
                 label="Name"
                 type="text"
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <AccountCircleOutlined />
-                      </InputAdornment>
-                    ),
-                  },
+                value={form.name}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <AccountCircleOutlined />
+                    </InputAdornment>
+                  ),
                 }}
                 placeholder="Your name"
                 variant="standard"
@@ -404,41 +455,46 @@ export default function Home() {
               />
               <TextField
                 id="emailField"
+                name="email"
                 label="Email"
                 type="email"
+                value={form.email}
+                onChange={handleChange}
                 placeholder="Your email"
                 required
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <EmailOutlined />
-                      </InputAdornment>
-                    ),
-                  },
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailOutlined />
+                    </InputAdornment>
+                  ),
                 }}
                 variant="standard"
               />
               <TextField
                 id="phoneField"
+                name="phone"
                 label="Phone number"
-                type="number"
+                type="tel"
+                value={form.phone}
+                onChange={handleChange}
                 placeholder="Your phone number"
                 required
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <PhoneOutlined />
-                      </InputAdornment>
-                    ),
-                  },
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PhoneOutlined />
+                    </InputAdornment>
+                  ),
                 }}
                 variant="standard"
               />
               <TextField
                 id="messageField"
+                name="message"
                 label="Message"
+                value={form.message}
+                onChange={handleChange}
                 multiline
                 rows={4}
                 placeholder="Leave your message here"
@@ -449,6 +505,7 @@ export default function Home() {
                 color="primary"
                 size="large"
                 endIcon={<SendOutlined />}
+                type="submit"
               >
                 Submit
               </Button>

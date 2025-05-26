@@ -9,6 +9,7 @@ from .serializers import AccountSerializer
 from rest_framework.pagination import CursorPagination
 import json
 from django.contrib.auth.hashers import make_password,check_password
+from django.db.models import Q
 
 # Cursor pagination class
 class AccountCursorPagination(CursorPagination):
@@ -55,27 +56,38 @@ def login(request):
         try:
             # Parse JSON request body
             data = json.loads(request.body)
-            username = data.get('username')
-            password = make_password(data.get('password'))
-            # Check if the account exists
-            try:
-                account = Account.objects.get(username=username)
-            except Account.DoesNotExist:
-                return JsonResponse({'error': 'Invalid username or password'}, status=401)
-            
-            # Verify the password (in production, use hashed passwords)
-            if not check_password(data.get('password'), account.password):
-                return JsonResponse({'error': 'Wrong password'}, status=401)
+            username_or_email = data.get('username')
+            password = data.get('password')
 
-            # If credentials are valid, return a success response
-            return JsonResponse({'username': account.username,"fullname": account.fullname, "email": account.email, "phonenumber": account.phonenumber,"address":account.address,'role': account.role}, status=200)
+            if not username_or_email or not password:
+                return JsonResponse({'error': 'Username/email and password are required'}, status=400)
+            
+            # Try to get account by username or email
+            try:
+                account = Account.objects.get(Q(username=username_or_email) | Q(email=username_or_email))
+            except Account.DoesNotExist:
+                return JsonResponse({'error': "Account doesn't exist"}, status=401)
+            
+            # Verify password
+            if not check_password(password, account.password):
+                return JsonResponse({'error': 'Wrong password'}, status=401)
+           
+
+            # Login successful, return user info (never return password!)
+            return JsonResponse({
+                'username': account.username,
+                'fullname': account.fullname,
+                'email': account.email,
+                'phonenumber': account.phonenumber,
+                'address': account.address,
+                'role': account.role
+            }, status=200)
         
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
     
     # If not POST, return a method not allowed error
     return JsonResponse({'error': 'Method not allowed'}, status=405)
-
 # Edit Account API (Function-based view with partial updates)
 @csrf_exempt
 @api_view(['PATCH'])
