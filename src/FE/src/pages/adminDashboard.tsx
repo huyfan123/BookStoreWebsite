@@ -43,6 +43,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
 const Sidebar = ({ setSelectedSection }) => {
+  const [currentSection, setCurrentSection] = useState("books");
   return (
     <Box
       width="250px"
@@ -67,19 +68,55 @@ const Sidebar = ({ setSelectedSection }) => {
           </ListItemIcon>
           <ListItemText primary="Dashboard" />
         </ListItemButton> */}
-        <ListItemButton onClick={() => setSelectedSection("books")}>
+        <ListItemButton
+          onClick={() => {
+            setSelectedSection("books");
+            setCurrentSection("books");
+          }}
+          sx={{
+            backgroundColor:
+              currentSection === "books" ? "#607d8b" : "transparent",
+            ":hover": {
+              backgroundColor: "#9e9e9e",
+            },
+          }}
+        >
           <ListItemIcon>
             <Book />
           </ListItemIcon>
           <ListItemText primary="Books" />
         </ListItemButton>
-        <ListItemButton onClick={() => setSelectedSection("accounts")}>
+        <ListItemButton
+          onClick={() => {
+            setSelectedSection("accounts");
+            setCurrentSection("accounts");
+          }}
+          sx={{
+            backgroundColor:
+              currentSection === "accounts" ? "#607d8b" : "transparent",
+            ":hover": {
+              backgroundColor: "#9e9e9e",
+            },
+          }}
+        >
           <ListItemIcon>
             <People />
           </ListItemIcon>
           <ListItemText primary="Accounts" />
         </ListItemButton>
-        <ListItemButton onClick={() => setSelectedSection("orders")}>
+        <ListItemButton
+          onClick={() => {
+            setSelectedSection("orders");
+            setCurrentSection("orders");
+          }}
+          sx={{
+            backgroundColor:
+              currentSection === "orders" ? "#607d8b" : "transparent",
+            ":hover": {
+              backgroundColor: "#9e9e9e",
+            },
+          }}
+        >
           <ListItemIcon>
             <ShoppingCart />
           </ListItemIcon>
@@ -236,6 +273,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchData();
     setNewItem(getInitialItem(selectedSection));
+    setSearchQuery(""); // Reset search query when section changes
   }, [selectedSection]);
 
   const handleSearchItem = async (e) => {
@@ -402,7 +440,7 @@ const AdminDashboard = () => {
       // Call API to save the updated book information
       const response = await api.patch(
         selectedSection === "books"
-          ? `/books/book-info/`
+          ? `/books/update/`
           : selectedSection === "accounts"
           ? "admin/accounts/update/"
           : "orders/edit/",

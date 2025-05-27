@@ -275,9 +275,7 @@ const BookDetails: React.FC = () => {
               <Typography variant="body1">{bookFormat}</Typography>
             )}
 
-            {tabValue === 2 && (
-              <Typography variant="body1">Reviews go here.</Typography>
-            )}
+            {tabValue === 2 && <Typography variant="body1"></Typography>}
           </Box>
         </Box>
       </Box>

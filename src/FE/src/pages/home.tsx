@@ -243,7 +243,12 @@ export default function Home() {
             <Typography variant="h6" sx={{ mb: 2 }}>
               Explore a vast selection of books
             </Typography>
-            <Button variant="contained" color="primary" size="large">
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              onClick={() => navigate("/products")}
+            >
               Explore books
             </Button>
           </Box>

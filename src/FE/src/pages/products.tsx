@@ -98,7 +98,7 @@ function BookCard({ book, onAddToCart }) {
       </Box>
 
       <Box sx={{ pb: 2, display: "block", justifyContent: "space-evenly" }}>
-        <Typography variant="h6">${book.price}</Typography>
+        <Typography variant="h6">{book.price}$ </Typography>
         <Button
           sx={{ width: "100%" }}
           variant="contained"

@@ -124,7 +124,7 @@ class CreateBookAPIView(APIView):
 # Update Book API (Partial Updates using query parameters)
 class UpdateBookAPIView(APIView):
     def patch(self, request):
-        book_id = request.query_params.get('book_id', None)
+        book_id = request.query_params.get('bookId', None)
         if not book_id:
             return Response({"error": "Query parameter 'book_id' is required"}, status=status.HTTP_400_BAD_REQUEST)
         try:

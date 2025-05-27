@@ -29,4 +29,6 @@ class AccountSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         # Customize the update method if needed
+        if 'password' in validated_data:
+            validated_data['password'] = make_password(validated_data['password'])
         return super().update(instance, validated_data)

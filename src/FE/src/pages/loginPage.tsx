@@ -42,6 +42,8 @@ const LoginRegisterForm: React.FC = () => {
       email: "",
       confirmPassword: "",
     }); // Reset form data
+    setPasswordStrength(""); // Reset password strength
+    setPasswordStrengthVisible(false); // Hide password strength indicator
   };
 
   const handleInputChange = (
@@ -108,7 +110,7 @@ const LoginRegisterForm: React.FC = () => {
       toast.error(err.response.data.error);
 
       setError(
-        err.response?.data?.message || "Failed to log in. Please try again."
+        err.response.data.error || "Failed to log in. Please try again."
       );
     }
   };
@@ -133,10 +135,12 @@ const LoginRegisterForm: React.FC = () => {
       toast.success("Registration successful! Please log in.");
     } catch (err) {
       console.error("Sign Up failed:", err);
-      toast.error("Failed to register. Please try again.");
-      setError(
-        err.response?.data?.message || "Failed to register. Please try again."
+      toast.error(
+        err.response.data.error || "Failed to register. Please try again."
       );
+      // setError(
+      //   err.response?.data?.message || "Failed to register. Please try again."
+      // );
     }
   };
 

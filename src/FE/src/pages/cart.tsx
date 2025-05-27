@@ -29,7 +29,7 @@ const CartPage: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState("Credit Card");
   const [applyDiscount, setApplyDiscount] = useState(false);
   const [couponCode, setCouponCode] = useState("");
-  const [discountAmount, setDiscountAmount] = useState(4); // Example discount amount
+  const [discountAmount, setDiscountAmount] = useState(0); // Example discount amount
   const [shippingFee, setShippingFee] = useState(5); // Example shipping fee
 
   const handleRemoveItem = (cartId: number) => {
@@ -129,6 +129,7 @@ const CartPage: React.FC = () => {
         setReceiverName("");
         setReceiverPhone("");
         setAddress("");
+        setCartItems([]);
       })
       .catch((error) => {
         console.error("Error placing order:", error);
@@ -179,7 +180,7 @@ const CartPage: React.FC = () => {
 
   return (
     <Box>
-      <Header />
+      <Header checkPoint={cartItems.length} />
       <Box
         sx={{
           minHeight: "100vh",

@@ -178,8 +178,9 @@ export const UserDashboard: React.FC = () => {
         password,
       })
       .then((response) => {
-        console.log("Change password successfully:", response.data);
         toast.success("Change password successfully");
+        setPassword("");
+        setConfirmPassword("");
       })
       .catch((error) => {
         console.error("Error changing password:", error);
@@ -235,7 +236,7 @@ export const UserDashboard: React.FC = () => {
 
           {/* Personal Info Tab */}
           <TabPanel value={tabValue} index={0}>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" marginBottom={5} gutterBottom>
               Personal Information
             </Typography>
             <Grid container spacing={2}>
@@ -258,6 +259,7 @@ export const UserDashboard: React.FC = () => {
                   InputProps={{
                     readOnly: true,
                   }}
+                  disabled
                 />
               </Grid>
               <Grid item xs={12} md={6}>
@@ -269,6 +271,7 @@ export const UserDashboard: React.FC = () => {
                   InputProps={{
                     readOnly: true,
                   }}
+                  disabled
                 />
               </Grid>
 
@@ -329,7 +332,8 @@ export const UserDashboard: React.FC = () => {
               <CardStyled key={order.orderId} sx={{ mb: 2 }}>
                 <Typography variant="h6">Order #{order.orderId}</Typography>
                 <Typography variant="body2" color="textSecondary">
-                  Order Date: {new Date(order.orderDate).toLocaleDateString()}
+                  Order Date:{" "}
+                  {new Date(order.orderDate).toLocaleDateString("en-GB")}
                 </Typography>
                 <Typography variant="body2">
                   Status:{" "}

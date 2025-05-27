@@ -45,11 +45,20 @@ def create_account(request):
                 role=data.get('role', 'user')  # Default role is 'user'
             )
             new_account.save()
-            return JsonResponse({'message': 'Account created successfully'}, status=201)
+            return Response({'message': 'Account created successfully'}, status=201)
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
-    
-# Login account    
+            # handle for each duplicate key column error
+            if 'username' in str(e):
+                return Response({'error': 'Username already exists'}, status=400)
+            elif 'email' in str(e):
+                return Response({'error': 'Email already exists'}, status=400)
+            elif 'phonenumber' in str(e):
+                return Response({'error': 'Phone number already exists'}, status=400)
+            return Response({'error': str(e)}, status=400)
+        
+     
+
+# Login account
 @csrf_exempt
 def login(request):
     if request.method == 'POST':
