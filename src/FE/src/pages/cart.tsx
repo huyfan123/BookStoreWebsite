@@ -12,6 +12,7 @@ import {
   Grid,
   MenuItem,
   Select,
+  Grid2,
 } from "@mui/material";
 import { Delete, Remove, Add } from "@mui/icons-material";
 import api from "../apis/api";
@@ -19,6 +20,7 @@ import { toast } from "react-toastify";
 import Header from "../components/header";
 import Footer from "../components/footer";
 import { useNavigate } from "react-router-dom";
+import emptyCartImg from "../assets/Images/emptyCart.png";
 
 const CartPage: React.FC = () => {
   const navigate = useNavigate();
@@ -185,7 +187,7 @@ const CartPage: React.FC = () => {
         sx={{
           minHeight: "100vh",
           backgroundColor: "#F5F5F5",
-          paddingX: { xs: "1rem", md: "2rem" },
+          paddingX: { xs: "1rem", md: "4rem" },
           paddingY: { xs: "1rem", md: "2rem" },
         }}
       >
@@ -198,109 +200,150 @@ const CartPage: React.FC = () => {
         </Typography>
 
         <Grid container spacing={4}>
-          {/* Book List Section */}
-          <Grid item xs={12} md={8}>
-            <Box
+          {cartItems.length === 0 ? (
+            // Empty Cart Section
+            <Grid
+              // component={Grid}
+              item
+              xs={12}
+              md={8}
               sx={{
-                flex: 2,
-                backgroundColor: "#FFF",
-                borderRadius: "8px",
-                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                // display: "flex",
+                flex: 1,
+                textAlign: "center",
                 padding: "1.5rem",
+                borderRadius: 2,
+                backgroundColor: "#fff",
+                marginTop: 4,
+                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
               }}
             >
-              {cartItems.map((item) => (
-                <Box
-                  key={item.cartId}
-                  sx={{
-                    display: "flex",
-                    flexDirection: { xs: "column", sm: "row" },
-                    alignItems: { xs: "flex-start", sm: "center" },
-                    marginBottom: "1rem",
-                    borderBottom: "1px solid #E0E0E0",
-                    paddingBottom: "1rem",
-                  }}
-                >
-                  <CardMedia
-                    image={item.book.coverImg}
-                    title={item.book.title}
-                    sx={{
-                      width: { xs: "100%", sm: 80 },
-                      height: { xs: 180, sm: 120 },
-                      borderRadius: "4px",
-                      marginBottom: { xs: "1rem", sm: "0" },
-                      marginRight: { sm: "1rem" },
-                    }}
-                  />
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="h6">{item.book.title}</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      by {item.book.author}
-                    </Typography>
-                    <Typography variant="body1" sx={{ marginTop: "0.5rem" }}>
-                      {parseFloat(item.book.price).toFixed(2)} $
-                    </Typography>
-                  </Box>
+              <CardMedia
+                sx={{
+                  height: 400,
+                  width: 300,
+                  marginBottom: 2,
+                  marginX: "auto",
+                }}
+                image={emptyCartImg}
+                title="Your cart is empty"
+              />
+              <Typography variant="h6">Your cart is empty</Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                style={{ marginTop: "1rem" }}
+                onClick={() => navigate("/products")}
+              >
+                Go Shopping
+              </Button>
+            </Grid>
+          ) : (
+            // Book List Section
+            <Grid item xs={12} md={8}>
+              <Box
+                sx={{
+                  flex: 2,
+                  backgroundColor: "#FFF",
+                  borderRadius: "8px",
+                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                  padding: "1.5rem",
+                }}
+              >
+                {cartItems.map((item) => (
                   <Box
+                    key={item.cartId}
                     sx={{
                       display: "flex",
-                      alignItems: "center",
-                      justifyContent: { xs: "space-between", sm: "center" },
-                      width: { xs: "100%", sm: "auto" },
-                      marginTop: { xs: "1rem", sm: "0" },
+                      flexDirection: { xs: "column", sm: "row" },
+                      alignItems: { xs: "flex-start", sm: "center" },
+                      marginBottom: "1rem",
+                      borderBottom: "1px solid #E0E0E0",
+                      paddingBottom: "1rem",
                     }}
                   >
-                    <IconButton
-                      onClick={() =>
-                        handleQuantityChange(item.cartId, item.quantity - 1)
-                      }
-                    >
-                      <Remove />
-                    </IconButton>
-                    <TextField
-                      value={item.quantity}
-                      type="number"
-                      inputProps={{ min: 1 }}
+                    <CardMedia
+                      image={item.book.coverImg}
+                      title={item.book.title}
                       sx={{
-                        width: "50px",
-                        textAlign: "center",
-                        margin: "0 0.5rem",
+                        width: { xs: "100%", sm: 80 },
+                        height: { xs: 180, sm: 120 },
+                        borderRadius: "4px",
+                        marginBottom: { xs: "1rem", sm: "0" },
+                        marginRight: { sm: "1rem" },
                       }}
-                      onChange={(e) =>
-                        handleQuantityChange(
-                          item.cartId,
-                          parseInt(e.target.value) || 1
-                        )
-                      }
                     />
-                    <IconButton
-                      onClick={() =>
-                        handleQuantityChange(item.cartId, item.quantity + 1)
-                      }
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6">{item.book.title}</Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        by {item.book.author}
+                      </Typography>
+                      <Typography variant="body1" sx={{ marginTop: "0.5rem" }}>
+                        {parseFloat(item.book.price).toFixed(2)} $
+                      </Typography>
+                    </Box>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: { xs: "space-between", sm: "center" },
+                        width: { xs: "100%", sm: "auto" },
+                        marginTop: { xs: "1rem", sm: "0" },
+                      }}
                     >
-                      <Add />
+                      <IconButton
+                        onClick={() =>
+                          handleQuantityChange(item.cartId, item.quantity - 1)
+                        }
+                      >
+                        <Remove />
+                      </IconButton>
+                      <TextField
+                        value={item.quantity}
+                        type="number"
+                        inputProps={{ min: 1 }}
+                        sx={{
+                          width: "50px",
+                          textAlign: "center",
+                          margin: "0 0.5rem",
+                        }}
+                        onChange={(e) =>
+                          handleQuantityChange(
+                            item.cartId,
+                            parseInt(e.target.value) || 1
+                          )
+                        }
+                      />
+                      <IconButton
+                        onClick={() =>
+                          handleQuantityChange(item.cartId, item.quantity + 1)
+                        }
+                      >
+                        <Add />
+                      </IconButton>
+                    </Box>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        marginLeft: { sm: "1rem" },
+                        marginTop: { xs: "1rem", sm: "0" },
+                      }}
+                    >
+                      {(parseFloat(item.book.price) * item.quantity).toFixed(2)}{" "}
+                      $
+                    </Typography>
+                    <IconButton
+                      onClick={() => handleRemoveItem(item.cartId)}
+                      color="secondary"
+                      sx={{ marginTop: { xs: "1rem", sm: "0" } }}
+                    >
+                      <Delete />
                     </IconButton>
                   </Box>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      marginLeft: { sm: "1rem" },
-                      marginTop: { xs: "1rem", sm: "0" },
-                    }}
-                  >
-                    {(parseFloat(item.book.price) * item.quantity).toFixed(2)} $
-                  </Typography>
-                  <IconButton
-                    onClick={() => handleRemoveItem(item.cartId)}
-                    color="secondary"
-                    sx={{ marginTop: { xs: "1rem", sm: "0" } }}
-                  >
-                    <Delete />
-                  </IconButton>
-                </Box>
-              ))}
-            </Box>
-          </Grid>
+                ))}
+              </Box>
+            </Grid>
+          )}
 
           {/* Order Summary Section */}
           <Grid item xs={12} md={4}>
@@ -388,6 +431,7 @@ const CartPage: React.FC = () => {
                 fullWidth
                 onClick={handleApplyCoupon}
                 sx={{ marginBottom: "1rem" }}
+                disabled={cartItems.length === 0}
               >
                 Apply
               </Button>
@@ -435,6 +479,7 @@ const CartPage: React.FC = () => {
                   },
                 }}
                 onClick={handlePurchase}
+                disabled={cartItems.length === 0}
               >
                 Purchase
               </Button>
