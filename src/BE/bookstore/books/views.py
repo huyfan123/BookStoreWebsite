@@ -7,6 +7,7 @@ from rest_framework.pagination import CursorPagination
 from .models import Book
 from .serializers import BookSerializer, BookDetailSerializer
 import random
+from django.db.models import Count, Sum, F, FloatField
 
 def book_list(request):
     # Get the limit (number of records to fetch) from query parameters
@@ -162,3 +163,100 @@ class RecommendBooksAPIView(APIView):
             books = Book.objects.filter(bookId__in=random_ids)
         serializer = BookSerializer(books, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+# Book statistics API
+class BookStatisticsAPIView(APIView):
+    def get(self, request):
+        # General statistics
+        total_books = Book.objects.count()
+        total_quantity = Book.objects.aggregate(total=Sum('quantity'))['total'] or 0
+        total_value = Book.objects.aggregate(
+            value=Sum(F('price') * F('quantity'), output_field=FloatField())
+        )['value'] or 0
+
+        # Categorical statistics (limit/group for performance)
+        TOP_N = 10
+        books_by_genre = list(
+            Book.objects.values('genres')
+            .annotate(count=Count('bookId'))
+            .order_by('-count')[:TOP_N]
+        )
+        other_genre_count = Book.objects.exclude(genres__in=[g['genres'] for g in books_by_genre]).count()
+        if other_genre_count > 0:
+            books_by_genre.append({'genres': 'Other', 'count': other_genre_count})
+
+        books_by_language = list(
+            Book.objects.values('language')
+            .annotate(count=Count('bookId'))
+            .order_by('-count')[:TOP_N]
+        )
+        other_language_count = Book.objects.exclude(language__in=[l['language'] for l in books_by_language]).count()
+        if other_language_count > 0:
+            books_by_language.append({'language': 'Other', 'count': other_language_count})
+
+        books_by_publisher = list(
+            Book.objects.values('publisher')
+            .annotate(count=Count('bookId'))
+            .order_by('-count')[:TOP_N]
+        )
+        other_publisher_count = Book.objects.exclude(publisher__in=[p['publisher'] for p in books_by_publisher]).count()
+        if other_publisher_count > 0:
+            books_by_publisher.append({'publisher': 'Other', 'count': other_publisher_count})
+
+        books_by_author = list(
+            Book.objects.values('author')
+            .annotate(count=Count('bookId'))
+            .order_by('-count')[:TOP_N]
+        )
+        other_author_count = Book.objects.exclude(author__in=[a['author'] for a in books_by_author]).count()
+        if other_author_count > 0:
+            books_by_author.append({'author': 'Other', 'count': other_author_count})
+
+        books_by_format = list(
+            Book.objects.values('bookFormat')
+            .annotate(count=Count('bookId'))
+            .order_by('-count')[:TOP_N]
+        )
+        other_format_count = Book.objects.exclude(bookFormat__in=[f['bookFormat'] for f in books_by_format]).count()
+        if other_format_count > 0:
+            books_by_format.append({'bookFormat': 'Other', 'count': other_format_count})
+
+        # Helper to clean values
+        def clean_value(val):
+            if val is None or val == "":
+                return "Undetermined"
+            if isinstance(val, str) and val.strip().startswith("[") and val.strip().endswith("]"):
+                # Remove brackets and quotes, join if multiple
+                import ast
+                try:
+                    parsed = ast.literal_eval(val)
+                    if isinstance(parsed, list):
+                        if not parsed:
+                            return "Undetermined"
+                        return ", ".join(str(x) for x in parsed if x)
+                except Exception:
+                    pass
+                return val.strip("[]") or "Undetermined"
+            return val
+
+        def clean_list(lst, key):
+            for item in lst:
+                item[key] = clean_value(item[key])
+            return lst
+
+        books_by_genre = clean_list(books_by_genre, 'genres')
+        books_by_language = clean_list(books_by_language, 'language')
+        books_by_publisher = clean_list(books_by_publisher, 'publisher')
+        books_by_author = clean_list(books_by_author, 'author')
+        books_by_format = clean_list(books_by_format, 'bookFormat')
+
+        return Response({
+            'total_books': total_books,
+            'total_quantity': total_quantity,
+            'total_value': total_value,
+            'books_by_genre': books_by_genre,
+            'books_by_language': books_by_language,
+            'books_by_publisher': books_by_publisher,
+            'books_by_author': books_by_author,
+            'books_by_format': books_by_format,
+        })

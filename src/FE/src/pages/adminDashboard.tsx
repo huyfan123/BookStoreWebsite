@@ -41,6 +41,7 @@ import {
 } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import StatisticBooks from "../components/statisticBooks";
 
 const Sidebar = ({ setSelectedSection }) => {
   const [currentSection, setCurrentSection] = useState("books");
@@ -62,12 +63,24 @@ const Sidebar = ({ setSelectedSection }) => {
 
       {/* Navigation Links */}
       <List>
-        {/* <ListItemButton>
+        <ListItemButton
+          onClick={() => {
+            setSelectedSection("dashboard");
+            setCurrentSection("dashboard");
+          }}
+          sx={{
+            backgroundColor:
+              currentSection === "dashboard" ? "#607d8b" : "transparent",
+            ":hover": {
+              backgroundColor: "#9e9e9e",
+            },
+          }}
+        >
           <ListItemIcon>
             <Dashboard />
           </ListItemIcon>
           <ListItemText primary="Dashboard" />
-        </ListItemButton> */}
+        </ListItemButton>
         <ListItemButton
           onClick={() => {
             setSelectedSection("books");
@@ -505,36 +518,41 @@ const AdminDashboard = () => {
           <Toolbar>
             {/* Search Bar */}
             <Box display="flex" alignItems="center" flexGrow={1}>
-              <Paper
-                sx={{
-                  p: "2px 4px",
-                  display: "flex",
-                  alignItems: "center",
-                  width: 400,
-                }}
-              >
-                <InputBase
-                  sx={{ ml: 1, flex: 1 }}
-                  placeholder={`Search for ${selectedSection}...`}
-                  inputProps={{ "aria-label": `search for ${selectedSection}` }}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <IconButton
-                  type="button"
+              {/* Only show search bar if not dashboard */}
+              {selectedSection !== "dashboard" && (
+                <Paper
                   sx={{
-                    p: "10px",
-                    borderWidth: 2,
-                    borderColor: "grey",
-                    borderRadius: 50,
-                    borderStyle: "solid",
+                    p: "2px 4px",
+                    display: "flex",
+                    alignItems: "center",
+                    width: 400,
                   }}
-                  aria-label="search"
-                  onClick={handleSearchItem}
                 >
-                  <Search />
-                </IconButton>
-              </Paper>
+                  <InputBase
+                    sx={{ ml: 1, flex: 1 }}
+                    placeholder={`Search for ${selectedSection}...`}
+                    inputProps={{
+                      "aria-label": `search for ${selectedSection}`,
+                    }}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <IconButton
+                    type="button"
+                    sx={{
+                      p: "10px",
+                      borderWidth: 2,
+                      borderColor: "grey",
+                      borderRadius: 50,
+                      borderStyle: "solid",
+                    }}
+                    aria-label="search"
+                    onClick={handleSearchItem}
+                  >
+                    <Search />
+                  </IconButton>
+                </Paper>
+              )}
             </Box>
             {/* User Info */}
             <Box display="flex" alignItems="center">
@@ -556,46 +574,22 @@ const AdminDashboard = () => {
         </AppBar>
 
         {/* Filters */}
-        <Container>
-          <Box display="flex" justifyContent="flex-end" mb={2} mt={2}>
-            {/* <Box display="flex" gap={2}>
-              <Select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                displayEmpty
-                size="small"
-                sx={{ minWidth: 150 }}
-              >
-                <MenuItem value="">All</MenuItem>
-                {languages.map((lang) => (
-                  <MenuItem value={lang}>{lang}</MenuItem>
-                ))}
-              </Select>
-              <Select
-                value={genre}
-                onChange={(e) => setGenre(e.target.value)}
-                displayEmpty
-                size="small"
-                sx={{ minWidth: 150 }}
-              >
-                <MenuItem value="">All</MenuItem>
-                {genres.map((gen) => (
-                  <MenuItem value={gen}>{gen}</MenuItem>
-                ))}
-              </Select>
-            </Box> */}
-            {(selectedSection === "books" ||
-              selectedSection === "accounts") && (
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleDialogOpen}
-              >
-                Add {selectedSection === "books" ? "Book" : "Account"}
-              </Button>
-            )}
-          </Box>
-        </Container>
+        {selectedSection !== "dashboard" && (
+          <Container>
+            <Box display="flex" justifyContent="flex-end" mb={2} mt={2}>
+              {(selectedSection === "books" ||
+                selectedSection === "accounts") && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleDialogOpen}
+                >
+                  Add {selectedSection === "books" ? "Book" : "Account"}
+                </Button>
+              )}
+            </Box>
+          </Container>
+        )}
 
         {/* Add Item Dialog */}
         <Dialog open={openDialog} onClose={handleDialogClose} fullWidth>
@@ -778,157 +772,179 @@ const AdminDashboard = () => {
         </Dialog>
 
         {/* Content */}
-        <Container>
-          {/* Dynamic Table Title */}
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            {selectedSection.charAt(0).toUpperCase() + selectedSection.slice(1)}{" "}
-            Management
-          </Typography>
-          {loading ? (
-            <Typography>Loading...</Typography>
-          ) : (
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead sx={{ backgroundColor: "grey" }}>
-                  <TableRow>
-                    {selectedSection === "books" && (
-                      <>
-                        <TableCell sx={{ color: "white" }}>Book ID</TableCell>
-                        <TableCell sx={{ color: "white" }}>Title</TableCell>
-
-                        <TableCell sx={{ color: "white" }}>Author</TableCell>
-
-                        <TableCell sx={{ color: "white" }}>
-                          Cover Image
-                        </TableCell>
-                        <TableCell sx={{ color: "white" }}>Price</TableCell>
-                        <TableCell sx={{ color: "white" }}>Actions</TableCell>
-                      </>
-                    )}
-                    {selectedSection === "orders" && (
-                      <>
-                        <TableCell sx={{ color: "white" }}>Order ID</TableCell>
-                        <TableCell sx={{ color: "white" }}>Customer</TableCell>
-                        <TableCell sx={{ color: "white" }}>Total</TableCell>
-                        <TableCell sx={{ color: "white" }}>Status</TableCell>
-                        <TableCell sx={{ color: "white" }}>Actions</TableCell>
-                      </>
-                    )}
-                    {selectedSection === "accounts" && (
-                      <>
-                        <TableCell sx={{ color: "white" }}>User Name</TableCell>
-                        <TableCell sx={{ color: "white" }}>Full Name</TableCell>
-                        <TableCell sx={{ color: "white" }}>Email</TableCell>
-                        <TableCell sx={{ color: "white" }}>Phone Num</TableCell>
-                        <TableCell sx={{ color: "white" }}>Address</TableCell>
-                        <TableCell sx={{ color: "white" }}>Role</TableCell>
-                        <TableCell sx={{ color: "white" }}>Actions</TableCell>
-                      </>
-                    )}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {data.map((item) => (
-                    <TableRow
-                      key={
-                        selectedSection === "books"
-                          ? item.bookId
-                          : selectedSection === "orders"
-                          ? item.orderId
-                          : item.username
-                      }
-                    >
+        {/* Dashboard/statistics section */}
+        {selectedSection === "dashboard" ? (
+          // {/* Statistics Dashboard */}
+          <Box mt={4}>
+            <StatisticBooks />
+          </Box>
+        ) : (
+          <Container>
+            {/* Dynamic Table Title */}
+            <Typography variant="h6" fontWeight="bold" gutterBottom>
+              {selectedSection.charAt(0).toUpperCase() +
+                selectedSection.slice(1)}{" "}
+              Management
+            </Typography>
+            {loading ? (
+              <Typography>Loading...</Typography>
+            ) : (
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead sx={{ backgroundColor: "grey" }}>
+                    <TableRow>
                       {selectedSection === "books" && (
                         <>
-                          <TableCell>{item.bookId}</TableCell>
-                          <TableCell>{item.title}</TableCell>
-                          <TableCell>{item.author}</TableCell>
-
-                          <TableCell>
-                            <img
-                              src={item.coverImg}
-                              alt={item.title}
-                              style={{
-                                width: 50,
-                                height: 50,
-                                objectFit: "cover",
-                                borderRadius: "4px",
-                              }}
-                            />
+                          <TableCell sx={{ color: "white" }}>Book ID</TableCell>
+                          <TableCell sx={{ color: "white" }}>Title</TableCell>
+                          <TableCell sx={{ color: "white" }}>Author</TableCell>
+                          <TableCell sx={{ color: "white" }}>
+                            Cover Image
                           </TableCell>
-                          <TableCell>{item.price}$</TableCell>
-                          <TableCell>
-                            <IconButton
-                              onClick={(event) => handleMenuClick(event, item)}
-                            >
-                              <MoreVert />
-                            </IconButton>
-                          </TableCell>
+                          <TableCell sx={{ color: "white" }}>Price</TableCell>
+                          <TableCell sx={{ color: "white" }}>Actions</TableCell>
                         </>
                       )}
                       {selectedSection === "orders" && (
                         <>
-                          <TableCell>{item.orderId}</TableCell>
-                          <TableCell>{item.username}</TableCell>
-                          <TableCell>
-                            {item.totalAmount ? `${item.totalAmount}$` : ""}
+                          <TableCell sx={{ color: "white" }}>
+                            Order ID
                           </TableCell>
-                          <TableCell>{item.status}</TableCell>
-                          <TableCell>
-                            <IconButton
-                              onClick={(event) => handleMenuClick(event, item)}
-                            >
-                              <MoreVert />
-                            </IconButton>
+                          <TableCell sx={{ color: "white" }}>
+                            Customer
                           </TableCell>
+                          <TableCell sx={{ color: "white" }}>Total</TableCell>
+                          <TableCell sx={{ color: "white" }}>Status</TableCell>
+                          <TableCell sx={{ color: "white" }}>Actions</TableCell>
                         </>
                       )}
                       {selectedSection === "accounts" && (
                         <>
-                          <TableCell>{item.username}</TableCell>
-                          <TableCell>{item.fullname}</TableCell>
-                          <TableCell>{item.email}</TableCell>
-                          <TableCell>{item.phonenumber}</TableCell>
-                          <TableCell>{item.address}</TableCell>
-                          <TableCell>{item.role}</TableCell>
-                          <TableCell>
-                            <IconButton
-                              onClick={(event) => handleMenuClick(event, item)}
-                            >
-                              <MoreVert />
-                            </IconButton>
+                          <TableCell sx={{ color: "white" }}>
+                            User Name
                           </TableCell>
+                          <TableCell sx={{ color: "white" }}>
+                            Full Name
+                          </TableCell>
+                          <TableCell sx={{ color: "white" }}>Email</TableCell>
+                          <TableCell sx={{ color: "white" }}>
+                            Phone Num
+                          </TableCell>
+                          <TableCell sx={{ color: "white" }}>Address</TableCell>
+                          <TableCell sx={{ color: "white" }}>Role</TableCell>
+                          <TableCell sx={{ color: "white" }}>Actions</TableCell>
                         </>
                       )}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-          {/* Pagination */}
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            mt={2}
-          >
-            <Button
-              onClick={handlePrevPage}
-              disabled={!prevPage}
-              variant="contained"
+                  </TableHead>
+                  <TableBody>
+                    {data.map((item) => (
+                      <TableRow
+                        key={
+                          selectedSection === "books"
+                            ? item.bookId
+                            : selectedSection === "orders"
+                            ? item.orderId
+                            : item.username
+                        }
+                      >
+                        {selectedSection === "books" && (
+                          <>
+                            <TableCell>{item.bookId}</TableCell>
+                            <TableCell>{item.title}</TableCell>
+                            <TableCell>{item.author}</TableCell>
+                            <TableCell>
+                              <img
+                                src={item.coverImg}
+                                alt={item.title}
+                                style={{
+                                  width: 50,
+                                  height: 50,
+                                  objectFit: "cover",
+                                  borderRadius: "4px",
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell>${item.price}</TableCell>
+                            <TableCell>
+                              <IconButton
+                                onClick={(event) =>
+                                  handleMenuClick(event, item)
+                                }
+                              >
+                                <MoreVert />
+                              </IconButton>
+                            </TableCell>
+                          </>
+                        )}
+                        {selectedSection === "orders" && (
+                          <>
+                            <TableCell>{item.orderId}</TableCell>
+                            <TableCell>{item.username}</TableCell>
+                            <TableCell>
+                              {item.totalAmount ? `${item.totalAmount}$` : ""}
+                            </TableCell>
+                            <TableCell>{item.status}</TableCell>
+                            <TableCell>
+                              <IconButton
+                                onClick={(event) =>
+                                  handleMenuClick(event, item)
+                                }
+                              >
+                                <MoreVert />
+                              </IconButton>
+                            </TableCell>
+                          </>
+                        )}
+                        {selectedSection === "accounts" && (
+                          <>
+                            <TableCell>{item.username}</TableCell>
+                            <TableCell>{item.fullname}</TableCell>
+                            <TableCell>{item.email}</TableCell>
+                            <TableCell>{item.phonenumber}</TableCell>
+                            <TableCell>{item.address}</TableCell>
+                            <TableCell>{item.role}</TableCell>
+                            <TableCell>
+                              <IconButton
+                                onClick={(event) =>
+                                  handleMenuClick(event, item)
+                                }
+                              >
+                                <MoreVert />
+                              </IconButton>
+                            </TableCell>
+                          </>
+                        )}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+            {/* Pagination */}
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+              mt={2}
             >
-              Previous
-            </Button>
-            <Button
-              onClick={handleNextPage}
-              disabled={!nextPage}
-              variant="contained"
-            >
-              Next
-            </Button>
-          </Box>
-        </Container>
+              <Button
+                onClick={handlePrevPage}
+                disabled={!prevPage}
+                variant="contained"
+              >
+                Previous
+              </Button>
+              <Button
+                onClick={handleNextPage}
+                disabled={!nextPage}
+                variant="contained"
+              >
+                Next
+              </Button>
+            </Box>
+          </Container>
+        )}
 
         {/* Actions Menu */}
         <Menu
