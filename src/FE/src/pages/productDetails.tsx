@@ -26,6 +26,7 @@ interface BookDetailsData {
   genres: string[];
   bookFormat: string;
   series: string;
+  quantity: number; // Add quantity to BookDetailsData
 }
 
 const BookDetails: React.FC = () => {
@@ -173,6 +174,7 @@ const BookDetails: React.FC = () => {
     genres,
     bookFormat,
     series,
+    quantity, // Destructure quantity
   } = bookDetails;
 
   return (
@@ -226,7 +228,7 @@ const BookDetails: React.FC = () => {
               sx={{ fontWeight: "bold" }}
               gutterBottom
             >
-              {price} $
+              ${price}
             </Typography>
             <Typography variant="subtitle1" color="textSecondary" gutterBottom>
               Series: {series || "None"}
@@ -237,6 +239,9 @@ const BookDetails: React.FC = () => {
             <Typography variant="body2" color="textSecondary" gutterBottom>
               Genres: {genres.join(", ")}
             </Typography>
+            <Typography variant="body2" color="textSecondary" gutterBottom>
+              In stock: {quantity}
+            </Typography>
 
             <Button
               variant="contained"
@@ -245,8 +250,9 @@ const BookDetails: React.FC = () => {
               onClick={() => {
                 handleAddToCart();
               }}
+              disabled={quantity === 0}
             >
-              Add to Cart
+              {quantity === 0 ? "Out of stock" : "Add to Cart"}
             </Button>
           </Grid>
         </Grid>

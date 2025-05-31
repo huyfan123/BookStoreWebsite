@@ -24,6 +24,7 @@ interface Book {
   author: string;
   price: string;
   coverImg: string;
+  quantity: number; // Add quantity to Book interface
 }
 
 function BookCard({ book, onAddToCart }) {
@@ -98,7 +99,11 @@ function BookCard({ book, onAddToCart }) {
       </Box>
 
       <Box sx={{ pb: 2, display: "block", justifyContent: "space-evenly" }}>
-        <Typography variant="h6">{book.price}$ </Typography>
+        <Typography variant="h6">${book.price} </Typography>
+        {/* Show stock quantity */}
+        <Typography variant="body2" color="text.secondary">
+          In stock: {book.quantity}
+        </Typography>
         <Button
           sx={{ width: "100%" }}
           variant="contained"
@@ -108,9 +113,10 @@ function BookCard({ book, onAddToCart }) {
             handleAddToCart();
             onAddToCart(book); // Call the parent function to update the cart
           }}
+          disabled={book.quantity === 0}
         >
           <AddShoppingCartOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
-          Add to cart
+          {book.quantity === 0 ? "Out of stock" : "Add to cart"}
         </Button>
       </Box>
     </Box>

@@ -91,6 +91,13 @@ class CreateOrderView(APIView):
                 price = item_data.get("price")
                 total_price = price * quantity
 
+                # Check if enough stock is available
+                if book.quantity < quantity:
+                    order.delete()  # Clean up the created order
+                    return Response({
+                        "error": f"Not enough stock for '{book.title}'. Only {book.quantity} left."
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
                 # Create the OrderItem
                 OrderItem.objects.create(
                     order=order,
@@ -99,6 +106,10 @@ class CreateOrderView(APIView):
                     price=price,
                     totalPrice=total_price,
                 )
+
+                # Update the book's inventory
+                book.quantity -= quantity
+                book.save()
 
                 # Update the total order amount
                 total_amount += total_price

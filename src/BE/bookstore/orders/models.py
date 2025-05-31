@@ -30,6 +30,7 @@ class Order(models.Model):
 
     class Meta:
         db_table = "orders"  # Explicitly map to the orders table in the database
+        managed = False
 
     def __str__(self):
         return f"Order #{self.orderId} - {self.receiverName}"
@@ -48,6 +49,7 @@ class OrderItem(models.Model):
 
     class Meta:
         db_table = "order_items"
+        managed = False
 
     def __str__(self):
         return f"OrderItem #{self.orderItemId} for Order #{self.order.orderId}"

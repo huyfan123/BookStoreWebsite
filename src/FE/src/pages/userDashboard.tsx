@@ -377,7 +377,7 @@ export const UserDashboard: React.FC = () => {
                       <Box>
                         <Typography variant="body1">{item.bookId}</Typography>
                         <Typography variant="body2" color="textSecondary">
-                          {item.price}$ × {item.quantity}
+                          ${item.price} × {item.quantity}
                         </Typography>
                       </Box>
                     </Box>
@@ -392,7 +392,7 @@ export const UserDashboard: React.FC = () => {
                   }}
                 >
                   <Typography variant="subtitle1">
-                    Total: {order.totalAmount}$
+                    Total: ${order.totalAmount}
                   </Typography>
 
                   {/* Conditional Buttons based on Order Status */}

@@ -19,10 +19,10 @@ def book_list(request):
     
     if limit:
         # Fetch the specified number of books
-        books = Book.objects.all()[:limit].values()  # Slicing the QuerySet to limit the records
+        books = Book.objects.all()[:limit].values('bookId', 'title', 'author', 'price', 'coverImg', 'quantity')  # Slicing the QuerySet to limit the records
     else:
         # Fetch all books if no limit is specified
-        books = Book.objects.all().values()
+        books = Book.objects.all().values('bookId', 'title', 'author', 'price', 'coverImg', 'quantity')
 
     return JsonResponse(list(books), safe=False)  # Return the data as JSON
 
@@ -32,7 +32,7 @@ class BookCursorPagination(CursorPagination):
 
 # Book list with pagination
 class BookListAPIView(ListAPIView):
-    queryset = Book.objects.values('bookId', 'title', 'author', 'price', 'coverImg')
+    queryset = Book.objects.values('bookId', 'title', 'author', 'price', 'coverImg', 'quantity')
     serializer_class = BookSerializer
     pagination_class = BookCursorPagination  # Use custom pagination
 

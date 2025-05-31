@@ -56,7 +56,7 @@ const CartPage: React.FC = () => {
     api
       .put(`cart/edit/?cartId=${cartId}`, { quantity: newQuantity })
       .then(() => {
-        console.log("Quantity updated successfully");
+        // console.log("Quantity updated successfully");
       })
       .catch(() => {
         console.error("Error updating quantity");
@@ -135,7 +135,7 @@ const CartPage: React.FC = () => {
       })
       .catch((error) => {
         console.error("Error placing order:", error);
-        toast.error("Failed to place order. Please try again.");
+        toast.error(error.response.data.error || "Error placing order");
       });
   };
 
@@ -279,7 +279,7 @@ const CartPage: React.FC = () => {
                         by {item.book.author}
                       </Typography>
                       <Typography variant="body1" sx={{ marginTop: "0.5rem" }}>
-                        {parseFloat(item.book.price).toFixed(2)} $
+                        ${parseFloat(item.book.price).toFixed(2)}
                       </Typography>
                     </Box>
                     <Box
@@ -329,8 +329,8 @@ const CartPage: React.FC = () => {
                         marginTop: { xs: "1rem", sm: "0" },
                       }}
                     >
-                      {(parseFloat(item.book.price) * item.quantity).toFixed(2)}{" "}
                       $
+                      {(parseFloat(item.book.price) * item.quantity).toFixed(2)}{" "}
                     </Typography>
                     <IconButton
                       onClick={() => handleRemoveItem(item.cartId)}
@@ -444,7 +444,7 @@ const CartPage: React.FC = () => {
               <Box display="flex" justifyContent="space-between" mb={1}>
                 <Typography variant="body1">Cart Subtotal:</Typography>
                 <Typography variant="body1">
-                  {calculateSubtotal().toFixed(2)} $
+                  ${calculateSubtotal().toFixed(2)}
                 </Typography>
               </Box>
               <Box display="flex" justifyContent="space-between" mb={1}>
@@ -455,7 +455,7 @@ const CartPage: React.FC = () => {
                 <Box display="flex" justifyContent="space-between" mb={1}>
                   <Typography variant="body1">Discount:</Typography>
                   <Typography variant="body1">
-                    -{discountAmount.toFixed(2)} $
+                    -${discountAmount.toFixed(2)}
                   </Typography>
                 </Box>
               )}
@@ -463,7 +463,7 @@ const CartPage: React.FC = () => {
               <Box display="flex" justifyContent="space-between">
                 <Typography variant="h6">Cart Total:</Typography>
                 <Typography variant="h6">
-                  {calculateTotal().toFixed(2)} $
+                  ${calculateTotal().toFixed(2)}
                 </Typography>
               </Box>
               <Button

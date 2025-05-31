@@ -18,7 +18,8 @@ class Book(models.Model):
     publishDate = models.DateField(blank=True, null=True)
     publisher = models.CharField(max_length=255, blank=True, null=True)
     series = models.CharField(max_length=255, blank=True, null=True)
-    setting = models.TextField(blank=True, null=True)
+    setting = models.TextField(blank=False, null=False)
+    quantity = models.PositiveIntegerField(blank=False, null=False)  # New field for stock quantity
 
     class Meta:
         managed = False  # Use this if Django should not manage the database table
