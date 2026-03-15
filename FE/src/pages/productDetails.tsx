@@ -19,9 +19,9 @@ interface BookDetailsData {
   author: string;
   description: string;
   price: string;
-  coverImage: string;
+  coverImg: string;
   publisher: string;
-  publishedDate: string;
+  publishDate: string;
   isbn: string;
   genres: string[];
   bookFormat: string;

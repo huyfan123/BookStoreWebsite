@@ -190,7 +190,7 @@ export default function Home() {
         alignItems: "center",
       }}
     >
-      <Header />
+      <Header checkPoint={0}/>
 
       <Box
         sx={{

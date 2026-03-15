@@ -1111,7 +1111,7 @@ const BookFilters = ({ onApplyFilters }) => {
             type="number"
             label="Min"
             value={priceRange[0]}
-            onChange={(e) => setPriceRange([e.target.value, priceRange[1]])}
+            onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
           />
           <TextField
             fullWidth

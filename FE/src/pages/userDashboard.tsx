@@ -22,7 +22,7 @@ const CardStyled = styled(Card)(({ theme }) => ({
   padding: theme.spacing(2),
 }));
 
-const TabPanel: React.FC<{ value: number; index: number }> = ({
+const TabPanel: React.FC<{ value: number; index: number; children?: React.ReactNode }> = ({
   value,
   index,
   children,
@@ -216,7 +216,7 @@ export const UserDashboard: React.FC = () => {
 
   return (
     <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
-      <Header />
+      <Header checkPoint={0}/>
 
       <Box sx={{ px: 30, py: 10 }}>
         <Typography variant="h4" gutterBottom>
