@@ -75,8 +75,8 @@ const StatisticBooks = () => {
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  label={({ name, genres }) => {
-                    const label = genres || name;
+                  label={( props: any ) => {
+                    const label = props.genres || props.name;
                     return label && label.length > 15
                       ? label.slice(0, 12) + "…"
                       : label;
@@ -109,9 +109,9 @@ const StatisticBooks = () => {
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  label={({ name, bookFormat }) => {
+                  label={(props: any) => {
                     // Show label as 'name' or 'bookFormat', truncate if too long
-                    const label = bookFormat || name;
+                    const label = props.bookFormat || props.name;
                     return label && label.length > 15
                       ? label.slice(0, 12) + "…"
                       : label;

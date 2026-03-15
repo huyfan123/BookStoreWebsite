@@ -13,7 +13,14 @@ const DataTable: React.FC<DataTableProps> = ({
   pageSize = 10,
 }) => {
   return (
-    <DataGrid rows={rows} columns={columns} pageSize={pageSize} autoHeight />
+    <DataGrid rows={rows} 
+    columns={columns} 
+   initialState={{
+        pagination: {
+          paginationModel: { pageSize },
+        },
+      }}
+    autoHeight />
   );
 };
 
