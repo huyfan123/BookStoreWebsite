@@ -3,6 +3,7 @@ from . import views
 from .views import *
 
 urlpatterns = [
+    path('books/health', views.health_check, name='health_check'),
     # path('books/', views.book_list, name='book_list'),  # Route to fetch books
     path('books/', BookListAPIView.as_view(), name='book-list'),
     path('books/filter/', FilterBooksAPIView.as_view(), name='filter_books'),

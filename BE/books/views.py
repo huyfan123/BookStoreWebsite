@@ -9,6 +9,9 @@ from .serializers import BookSerializer, BookDetailSerializer
 import random
 from django.db.models import Count, Sum, F, FloatField
 
+def health_check(request):
+    return JsonResponse({'message': 'OK'}, status=200)
+
 def book_list(request):
     # Get the limit (number of records to fetch) from query parameters
     limit = request.GET.get('limit', None)  # Example: ?limit=10
