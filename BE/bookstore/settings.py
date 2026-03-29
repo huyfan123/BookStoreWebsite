@@ -106,11 +106,17 @@ WSGI_APPLICATION = 'bookstore.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.mysql'),
-        'NAME': os.getenv('DB_NAME', 'bookstoredb'),
-        'USER': os.getenv('DB_USER', 'root'),
-        'PASSWORD': os.getenv('DB_PASSWORD', '1234'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '3306'),
+       'NAME': os.environ.get('TIDB_DB_NAME', 'test'),
+        'USER': os.environ.get('TIDB_USER'),
+        'PASSWORD': os.environ.get('TIDB_PASSWORD'),
+        'HOST': os.environ.get('TIDB_HOST'),
+        'PORT': os.environ.get('TIDB_PORT', '4000'),
+        'OPTIONS': {
+            'ssl': {
+                'ca': '/etc/ssl/certs/ca-certificates.crt',
+            },
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES', innodb_strict_mode=1",
+        },
     }
 }
 

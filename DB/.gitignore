@@ -1,0 +1,9 @@
+# Virtual Environment
+venv/
+
+# Database test files
+testTiDB.sql
+
+# Scripts
+reformatDate.py
+
