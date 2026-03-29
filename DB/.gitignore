@@ -3,6 +3,7 @@ venv/
 
 # Database test files
 testTiDB.sql
+TiDB_Security.txt
 
 # Scripts
 reformatDate.py
