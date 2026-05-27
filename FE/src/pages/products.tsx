@@ -1,22 +1,13 @@
 import React, { useEffect, useState } from "react";
 import api from "../apis/api";
-import {
-  Typography,
-  Container,
-  Button,
-  Box,
-  Tooltip,
-  InputBase,
-  IconButton,
-  Grid
-} from "@mui/material";
-import { Search } from "@mui/icons-material";
 import { useLocation, useNavigate } from "react-router-dom";
 import Header from "../components/header";
 import BookFilters from "../components/filter";
 import Footer from "../components/footer";
-import AddShoppingCartOutlinedIcon from "@mui/icons-material/AddShoppingCartOutlined";
+import { Search, ShoppingCart } from "lucide-react";
 import { toast } from "react-toastify";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
 
 interface Book {
   bookId: string;
@@ -27,7 +18,7 @@ interface Book {
   quantity: number; // Add quantity to Book interface
 }
 
-function BookCard({ book, onAddToCart }) {
+function BookCard({ book, onAddToCart }: { book: Book, onAddToCart: (book: Book) => void }) {
   const navigate = useNavigate();
 
   const handleCardClick = () => {
@@ -45,7 +36,7 @@ function BookCard({ book, onAddToCart }) {
         username: document.cookie
           .split(";")
           .find((cookie) => cookie.trim().startsWith("username="))
-          .split("=")[1],
+          ?.split("=")[1],
         bookId: book.bookId,
         quantity: 1,
       })
@@ -57,75 +48,54 @@ function BookCard({ book, onAddToCart }) {
       });
   };
   return (
-    <Box
+    <div
       onClick={handleCardClick}
-      sx={{
-        height: "360px",
-        width: "200px",
-        cursor: "pointer",
-        "&:hover": { transform: "scale(1.02)" },
-        transition: "transform 0.2s",
-      }}
+      className="h-[360px] w-full max-w-[200px] cursor-pointer hover:scale-105 transition-transform duration-200 mx-auto"
     >
       <img
         src={book.coverImg}
         alt={book.title}
-        style={{
-          borderRadius: "8px",
-          width: "100%",
-          height: "200px",
-          objectFit: "cover",
-        }}
+        className="rounded-lg w-full h-[200px] object-cover"
       />
-      <Box sx={{ flexGrow: 1, paddingBottom: "8px" }}>
-        <Tooltip title={book.title} arrow>
-          <Typography
-            gutterBottom
-            variant="h6"
-            component="div"
-            noWrap
-            sx={{
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {book.title}
-          </Typography>
-        </Tooltip>
-        <Typography variant="body2" color="text.secondary" noWrap>
+      <div className="flex-grow pb-2">
+        <h3
+          className="text-lg font-medium overflow-hidden text-ellipsis whitespace-nowrap mt-2"
+          title={book.title}
+        >
+          {book.title}
+        </h3>
+        <p className="text-sm text-gray-500 truncate">
           {book.author}
-        </Typography>
-      </Box>
+        </p>
+      </div>
 
-      <Box sx={{ pb: 2, display: "block", justifyContent: "space-evenly" }}>
-        <Typography variant="h6">${book.price} </Typography>
+      <div className="pb-4 block justify-evenly">
+        <h4 className="text-lg font-semibold">${book.price} </h4>
         {/* Show stock quantity */}
-        <Typography variant="body2" color="text.secondary">
+        <p className="text-sm text-gray-500 mb-2">
           In stock: {book.quantity}
-        </Typography>
+        </p>
         <Button
-          sx={{ width: "100%" }}
-          variant="contained"
-          size="small"
+          className="w-full"
+          size="sm"
           onClick={(event) => {
-            event.stopPropagation(); // Prevents the click from propagating to the parent Box
+            event.stopPropagation(); // Prevents the click from propagating to the parent div
             handleAddToCart();
             onAddToCart(book); // Call the parent function to update the cart
           }}
           disabled={book.quantity === 0}
         >
-          <AddShoppingCartOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
+          <ShoppingCart className="h-4 w-4 mr-2" />
           {book.quantity === 0 ? "Out of stock" : "Add to cart"}
         </Button>
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }
 
 export default function BookStore() {
   const [books, setBooks] = useState<Book[]>([]);
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState<Book[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
@@ -158,7 +128,7 @@ export default function BookStore() {
     fetchBooks("books/"); // Initial API endpoint (relative path)
   }, []);
 
-  const handleAddToCart = (book) => {
+  const handleAddToCart = (book: Book) => {
     setCartItems([...cartItems, book]);
   };
 
@@ -171,7 +141,7 @@ export default function BookStore() {
     fetchBooks(`books/search/?title=${encodeURIComponent(searchQuery)}`);
   };
 
-  const handleFiltersChange = (filters) => {
+  const handleFiltersChange = (filters: any) => {
     console.log("Applied filters:", filters);
 
     // Build query parameters based on filters
@@ -199,95 +169,57 @@ export default function BookStore() {
   };
 
   return (
-    <Box>
+    <div>
       <Header checkPoint={cartItems.length} />
-      <Box sx={{ display: "flex" }}>
+      <div className="flex flex-col md:flex-row min-h-screen items-start">
         {/* Filter Sidebar */}
         <BookFilters onApplyFilters={handleFiltersChange} />
 
         {/* Main Content */}
-        <Box sx={{ flexGrow: 1 }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              mt: 2,
-              mb: 2,
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                borderRadius: "24px",
-                backgroundColor: "#f0f0f0",
-                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-                padding: "4px 8px",
-                maxWidth: "500px",
-                width: "100%",
-              }}
-            >
-              <InputBase
+        <div className="flex-grow w-full">
+          <div className="flex justify-center items-center mt-4 mb-4 px-4">
+            <div className="flex items-center rounded-3xl bg-gray-100 shadow-sm p-1 max-w-[500px] w-full">
+              <Input
                 placeholder="Search book..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                sx={{
-                  flexGrow: 1,
-                  marginLeft: "8px",
-                  fontSize: "16px",
-                }}
+                className="flex-grow ml-2 text-base border-0 shadow-none bg-transparent focus-visible:ring-0"
               />
-              <IconButton
-                onClick={handleSearch}
-                sx={{
-                  backgroundColor: "#6c63ff",
-                  color: "#fff",
-                  borderRadius: "50%",
-                  width: "40px",
-                  height: "40px",
-                  "&:hover": {
-                    backgroundColor: "#5a54d6",
-                  },
-                }}
-              >
-                <Search />
-              </IconButton>
-            </Box>
-          </Box>
-
-          <Container maxWidth="xl" sx={{ p: 3 }}>
-            <Grid container spacing={3}>
-              {books.map((book) => (
-                <Grid xs={12} sm={6} md={4} lg={3} key={book.bookId}>
-                  <BookCard book={book} onAddToCart={handleAddToCart} />
-                </Grid>
-              ))}
-            </Grid>
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
               <Button
-                variant="outlined"
+                size="icon"
+                onClick={handleSearch}
+                className="rounded-full w-10 h-10 bg-primary text-white shrink-0 hover:bg-primary/90"
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="max-w-7xl mx-auto p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {books.map((book) => (
+                <div key={book.bookId} className="w-full">
+                  <BookCard book={book} onAddToCart={handleAddToCart} />
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-center mt-8">
+              <Button
+                variant="outline"
                 onClick={() =>
                   nextPage &&
                   fetchBooks(nextPage.replace("http://127.0.0.1:8000/api/", ""))
                 }
-                sx={{
-                  my: 1,
-                  width: "auto", // Prevent full-width
-                  flexShrink: 0, // Prevent shrinking in flex containers
-                  px: 2, // Horizontal padding
-                  minWidth: "unset", // Override default min-width
-                  whiteSpace: "nowrap", // Prevent text wrapping
-                }}
+                className="my-2 px-6"
                 disabled={!nextPage}
               >
                 Load more
               </Button>
-            </Box>
-          </Container>
-        </Box>
-      </Box>
+            </div>
+          </div>
+        </div>
+      </div>
       <Footer />
-    </Box>
+    </div>
   );
 }

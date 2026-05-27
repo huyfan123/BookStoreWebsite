@@ -4,7 +4,7 @@ from .models import Book
 class BookSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
-        fields = ['bookId', 'title', 'author', 'price', 'coverImg', 'quantity']
+        fields = ['bookId', 'title', 'author', 'price', 'coverImg', 'quantity', 'rating', 'numRatings']
         
         
 # Custom serializer for detailed book information
@@ -29,4 +29,6 @@ class BookDetailSerializer(serializers.ModelSerializer):
             'coverImg', 
             'price',
             'quantity',  # Add quantity to detailed serializer
+            'rating',
+            'numRatings',
         ]

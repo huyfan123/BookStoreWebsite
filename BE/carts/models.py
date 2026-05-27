@@ -1,23 +1,22 @@
 from django.db import models
+from django.conf import settings
 from accounts.models import Account
 from books.models import Book
 
 class Cart(models.Model):
     cartId = models.AutoField(primary_key=True)  # Map to the `cartId` column in the database
     user = models.ForeignKey(
-        Account,
-        to_field='username',  # Reference the `username` column in the accounts table
-        db_column='username',
-        on_delete=models.CASCADE
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        db_column='user_id'
     )
     book = models.ForeignKey(
-        Book,
-        to_field='bookId',  # Reference the `bookId` column in the books table
-        db_column='bookId',
-        on_delete=models.CASCADE
+        'books.Book', 
+        on_delete=models.CASCADE, 
+        db_column='bookId'
     )
-    quantity = models.PositiveIntegerField(default=1)  # Map to `quantity`
-    added_at = models.DateTimeField(db_column='addedAt', auto_now_add=True)  # Map to `addedAt`
+    quantity = models.IntegerField()  # Map to `quantity`
+    added_at = models.DateTimeField(auto_now_add=True)  # Map to `addedAt`
 
     class Meta:
         managed = True  # Let Django handle the table

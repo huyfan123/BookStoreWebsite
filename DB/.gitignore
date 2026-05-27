@@ -8,3 +8,9 @@ TiDB_Security.txt
 # Scripts
 reformatDate.py
 
+#Table in DB (.json)
+accounts.json
+books.json
+order_items.json
+orders.json
+user_interactions.json

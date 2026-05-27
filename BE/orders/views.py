@@ -6,9 +6,10 @@ from .models import Order, OrderItem
 from .serializers import OrderSerializer, OrderItemSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
-from books.models import Book
+from books.models import Book, UserInteraction
 from rest_framework.pagination import CursorPagination
-from django.db.models import Q
+from django.db.models import Q, F
+from accounts.models import Account
 
 
 # View User's Orders and Order Items
@@ -19,7 +20,7 @@ class UserOrderView(APIView):
             return Response({"error": "Username is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Fetch orders and their items for the given username
-        orders = Order.objects.filter(username=username).prefetch_related("items")
+        orders = Order.objects.filter(user__username=username).prefetch_related("items")
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -30,7 +31,7 @@ class OrderListAdminView(APIView):
             page_size = 10
             ordering = 'orderId'
         paginator = SimpleOrderCursorPagination()
-        orders = Order.objects.all().order_by('orderId').values('orderId', 'username', 'totalAmount', 'status')
+        orders = Order.objects.all().order_by('orderId').annotate(username=F('user__username')).values('orderId', 'username', 'totalAmount', 'status')
         result_page = paginator.paginate_queryset(orders, request)
         return paginator.get_paginated_response(result_page)
 
@@ -48,7 +49,7 @@ class SearchOrderView(APIView):
         # Try to search by orderId (exact match) or username (partial match)
         orders = Order.objects.filter(
             Q(orderId__iexact=query) |
-            Q(username__icontains=query)
+            Q(user__username__icontains=query)
         ).order_by('orderDate')
 
 
@@ -69,9 +70,12 @@ class CreateOrderView(APIView):
             payment_method = request.data.get("paymentMethod")
             items_data = request.data.get("items", [])
 
+            # Get user account
+            user = get_object_or_404(Account, username=username)
+
             # Create the order
             order = Order.objects.create(
-                username=username,
+                user=user,
                 receiverName=receiver_name,
                 receiverPhone=receiver_phone,
                 shippingAddress=shipping_address,
@@ -109,7 +113,14 @@ class CreateOrderView(APIView):
 
                 # Update the book's inventory
                 book.quantity -= quantity
-                book.save()
+                book.save(update_fields=['quantity'])
+
+                # Log the interaction
+                UserInteraction.objects.create(
+                    user_id=username,
+                    book=book,
+                    interaction_type='purchase'
+                )
 
                 # Update the total order amount
                 total_amount += total_price
@@ -151,7 +162,7 @@ class EditOrderStatusView(APIView):
 
         try:
             # Fetch the order based on username and order_id
-            order = Order.objects.get(orderId=order_id, username=username)
+            order = Order.objects.get(orderId=order_id, user__username=username)
         except Order.DoesNotExist:
             return Response({"error": "Order not found or you don't have permission to modify this order"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -187,7 +198,7 @@ class OrderDetailAdminView(APIView):
             # Exclude order items from the response
             data = {
                 'orderId': order.orderId,
-                'username': order.username,
+                'username': order.user.username if order.user else None,
                 'receiverName': order.receiverName,
                 'receiverPhone': order.receiverPhone,
                 'orderDate': order.orderDate,

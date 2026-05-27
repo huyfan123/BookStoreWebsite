@@ -23,10 +23,10 @@ def book_list(request):
     
     if limit:
         # Fetch the specified number of books
-        books = Book.objects.all()[:limit].values('bookId', 'title', 'author', 'price', 'coverImg', 'quantity')  # Slicing the QuerySet to limit the records
+        books = Book.objects.all()[:limit].values('bookId', 'title', 'author', 'price', 'coverImg', 'quantity', 'rating', 'numRatings')  # Slicing the QuerySet to limit the records
     else:
         # Fetch all books if no limit is specified
-        books = Book.objects.all().values('bookId', 'title', 'author', 'price', 'coverImg', 'quantity')
+        books = Book.objects.all().values('bookId', 'title', 'author', 'price', 'coverImg', 'quantity', 'rating', 'numRatings')
 
     return JsonResponse(list(books), safe=False)  # Return the data as JSON
 
@@ -36,7 +36,7 @@ class BookCursorPagination(CursorPagination):
 
 # Book list with pagination
 class BookListAPIView(ListAPIView):
-    queryset = Book.objects.values('bookId', 'title', 'author', 'price', 'coverImg', 'quantity')
+    queryset = Book.objects.values('bookId', 'title', 'author', 'price', 'coverImg', 'quantity', 'rating', 'numRatings')
     serializer_class = BookSerializer
     pagination_class = BookCursorPagination  # Use custom pagination
 
@@ -155,15 +155,27 @@ class DeleteBookAPIView(APIView):
         except Book.DoesNotExist:
             return Response({"error": "Book not found"}, status=status.HTTP_404_NOT_FOUND)
 
-# API to get 3 random books
+# API to get 5 recommended books
 class RecommendBooksAPIView(APIView):
     def get(self, request):
-        book_ids = list(Book.objects.values_list('bookId', flat=True))
-        if len(book_ids) < 3:
-            books = Book.objects.all()
-        else:
-            random_ids = random.sample(book_ids, 3)
-            books = Book.objects.filter(bookId__in=random_ids)
+        book_id = request.query_params.get('bookId', None)
+        user_id = request.query_params.get('userId', None)
+        limit = 5 # As requested by limit=5 in the plan
+        
+        from .services.recommender_service import RecommenderService
+        service = RecommenderService()
+        
+        if book_id:
+            try:
+                # Check if book exists first
+                Book.objects.get(bookId=book_id)
+            except Book.DoesNotExist:
+                # If book doesn't exist, we can still try to get recommendations for the user or fallback
+                book_id = None
+                
+        # Call hybrid recommendations logic
+        books = service.get_hybrid_recommendations(user_id=user_id, book_id=book_id, limit=limit)
+            
         serializer = BookSerializer(books, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -263,3 +275,65 @@ class BookStatisticsAPIView(APIView):
             'books_by_author': books_by_author,
             'books_by_format': books_by_format,
         })
+
+from django.shortcuts import get_object_or_404
+from .models import UserInteraction
+from rest_framework.permissions import AllowAny
+
+class LogUserInteractionAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        user_id = request.data.get('username')
+        book_id = request.data.get('bookId')
+        interaction_type = request.data.get('interaction_type')
+        rating_score = request.data.get('rating_score')
+
+        if not user_id or not book_id or not interaction_type:
+            return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
+
+        book = get_object_or_404(Book, bookId=book_id)
+
+        UserInteraction.objects.create(
+            user_id=user_id,
+            book=book,
+            interaction_type=interaction_type,
+            rating_score=rating_score
+        )
+        return Response({"message": "Interaction logged"}, status=status.HTTP_201_CREATED)
+
+class HomepageRecommendationsAPIView(APIView):
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        user_id = request.query_params.get('userId', None)
+        limit = 10
+        
+        from .services.recommender_service import RecommenderService
+        service = RecommenderService()
+        
+        has_interactions = False
+        if user_id:
+            has_interactions = UserInteraction.objects.filter(user_id=user_id).exists()
+        
+        try:
+            recommendations = service.get_homepage_recommendations(user_id=user_id, limit=limit)
+        except Exception as e:
+            # Fallback in case of errors (e.g. models not trained, etc.)
+            import random
+            print(f"Error in homepage recommendations: {e}")
+            cold_start = service.get_cold_start_recommendations(limit=limit * 3)
+            random.shuffle(cold_start)
+            
+            recommendations = {
+                'personalized': cold_start[:limit],
+                'explore_new': cold_start[limit:limit*2],
+                'trending': cold_start[limit*2:limit*3]
+            }
+            
+        return Response({
+            'has_interactions': has_interactions,
+            'personalized': BookSerializer(recommendations['personalized'], many=True).data,
+            'explore_new': BookSerializer(recommendations['explore_new'], many=True).data,
+            'trending': BookSerializer(recommendations['trending'], many=True).data,
+        }, status=status.HTTP_200_OK)

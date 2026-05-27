@@ -87,20 +87,36 @@ export default function BookstoreNavbar({ checkPoint }: BookstoreNavbarProps) {
     navigate("/dashboard");
     handleCloseMenu();
   };
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    document.cookie =
-      "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie =
-      "fullname=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie = "email=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie =
-      "phonenumber=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie =
-      "address=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    toast.success("Logout successful");
-    navigate("/");
-    handleCloseMenu();
+  const handleLogout = async () => {
+    try {
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (refreshToken) {
+        await api.post("token/blacklist/", { refresh: refreshToken });
+      }
+    } catch (error) {
+      console.error("Error blacklisting token on logout:", error);
+    } finally {
+      setIsLoggedIn(false);
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+
+      document.cookie =
+        "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      document.cookie =
+        "fullname=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      document.cookie = "email=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      document.cookie =
+        "phonenumber=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      document.cookie =
+        "address=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      toast.success("Logout successful");
+      if (window.location.pathname === "/") {
+        window.location.reload();
+      } else {
+        navigate("/");
+      }
+      handleCloseMenu();
+    }
   };
 
   const drawer = (

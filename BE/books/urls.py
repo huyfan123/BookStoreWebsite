@@ -14,4 +14,6 @@ urlpatterns = [
     path('books/book-info/', LoadBookAPIView.as_view(), name='load_book'),
     path('books/recommend/', RecommendBooksAPIView.as_view(), name='recommend_books'),  # Get 3 random books
     path('books/statistics/', BookStatisticsAPIView.as_view(), name='book_statistics'),
+    path('books/interaction/', LogUserInteractionAPIView.as_view(), name='log_interaction'),
+    path('books/homepage-recommendations/', HomepageRecommendationsAPIView.as_view(), name='homepage_recommendations'),
 ]

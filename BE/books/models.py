@@ -20,6 +20,13 @@ class Book(models.Model):
     series = models.CharField(max_length=255, blank=True, null=True)
     setting = models.TextField(blank=False, null=False)
     quantity = models.PositiveIntegerField(blank=False, null=False)  # New field for stock quantity
+    rating = models.DecimalField(max_digits=3, decimal_places=2, blank=True, null=True, default=0.00)
+    numRatings = models.BigIntegerField(blank=True, null=True, default=0)
+    ratingsByStars = models.TextField(blank=True, null=True)
+    likedPercent = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    bbeScore = models.BigIntegerField(blank=True, null=True, default=0)
+    bbeVotes = models.BigIntegerField(blank=True, null=True, default=0)
+    firstPublishDate = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         managed = False  # Use this if Django should not manage the database table
@@ -27,3 +34,25 @@ class Book(models.Model):
 
     def __str__(self):
         return self.title
+
+class UserInteraction(models.Model):
+    INTERACTION_CHOICES = [
+        ('view', 'View'),
+        ('add_to_cart', 'Add to Cart'),
+        ('purchase', 'Purchase'),
+        ('rating', 'Rating'),
+    ]
+
+    interaction_id = models.BigAutoField(primary_key=True)
+    user_id = models.CharField(max_length=255, null=False)
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, db_column='book_id')
+    interaction_type = models.CharField(max_length=50, choices=INTERACTION_CHOICES, null=False)
+    rating_score = models.DecimalField(max_digits=3, decimal_places=2, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = False  # The table is already created in the DB
+        db_table = 'user_interactions'
+
+    def __str__(self):
+        return f"{self.user_id} - {self.interaction_type} - {self.book_id}"

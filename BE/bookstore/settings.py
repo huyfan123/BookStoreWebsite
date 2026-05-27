@@ -105,15 +105,16 @@ WSGI_APPLICATION = 'bookstore.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+DB_IS_TIDB = os.getenv('DB_HOST') and 'tidb' in os.getenv('DB_HOST').lower()
 
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.mysql'),
-       'NAME': os.environ.get('TIDB_DB_NAME', 'test'),
-        'USER': os.environ.get('TIDB_USER'),
-        'PASSWORD': os.environ.get('TIDB_PASSWORD'),
-        'HOST': os.environ.get('TIDB_HOST'),
-        'PORT': os.environ.get('TIDB_PORT', '4000'),
+        'NAME': os.environ.get('DB_NAME', 'bookstoredb'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST'),
+        'PORT': os.environ.get('DB_PORT', '3306'),
         'OPTIONS': {
             'ssl': {
                 'ca': '/etc/ssl/certs/ca-certificates.crt',
@@ -123,6 +124,13 @@ DATABASES = {
     }
 }
 
+# Chỉ thêm SSL khi kết nối tới TiDB (để không lỗi khi chạy localhost)
+if DB_IS_TIDB:
+    DATABASES['default']['OPTIONS']['ssl'] = {
+        'ca': os.getenv('TIDB_CA_PATH', '/etc/ssl/certs/ca-certificates.crt')
+    }
+
+AUTH_USER_MODEL = 'accounts.Account'
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

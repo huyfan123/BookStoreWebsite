@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from .models import Cart
-from books.models import Book
+from books.models import Book, UserInteraction
 from .serializers import CartSerializer
 from accounts.models import Account
 from rest_framework.views import APIView
@@ -25,12 +25,21 @@ class AddToCartView(APIView):
         book = get_object_or_404(Book, bookId=book_id)
 
         # Add or Update Cart Entry
-        cart_item, created = Cart.objects.get_or_create(user=user, book=book)
+        cart_item, created = Cart.objects.get_or_create(
+            user=user, 
+            book=book,
+            defaults={'quantity': quantity}
+        )
         if not created:
-            cart_item.quantity += quantity
-        else:
-            cart_item.quantity = quantity
-        cart_item.save()
+            cart_item.quantity += int(quantity)
+            cart_item.save()
+
+        # Log the interaction
+        UserInteraction.objects.create(
+            user_id=username,
+            book=book,
+            interaction_type='add_to_cart'
+        )
 
         return Response({"message": "Book added to cart successfully"}, status=status.HTTP_201_CREATED)
 

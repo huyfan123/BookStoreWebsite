@@ -1,29 +1,17 @@
 import React, { useEffect, useState } from "react";
-import {
-  Typography,
-  Card,
-  CardMedia,
-  CardContent,
-  Button,
-  IconButton,
-  Box,
-  TextField,
-  Divider,
-  Grid,
-  MenuItem,
-  Select,
-} from "@mui/material";
-import { Delete, Remove, Add } from "@mui/icons-material";
+import { Trash2, Minus, Plus } from "lucide-react";
 import api from "../apis/api";
 import { toast } from "react-toastify";
 import Header from "../components/header";
 import Footer from "../components/footer";
 import { useNavigate } from "react-router-dom";
 import emptyCartImg from "../assets/Images/emptyCart.png";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
 
 const CartPage: React.FC = () => {
   const navigate = useNavigate();
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState<any[]>([]);
   const [receiverName, setReceiverName] = useState("");
   const [receiverPhone, setReceiverPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -134,7 +122,7 @@ const CartPage: React.FC = () => {
       })
       .catch((error) => {
         console.error("Error placing order:", error);
-        toast.error(error.response.data.error || "Error placing order");
+        toast.error(error.response?.data?.error || "Error placing order");
       });
   };
 
@@ -177,318 +165,187 @@ const CartPage: React.FC = () => {
         }
         toast.error("Error fetching cart items");
       });
-  }, []);
+  }, [navigate]);
 
   return (
-    <Box>
+    <div>
       <Header checkPoint={cartItems.length} />
-      <Box
-        sx={{
-          minHeight: "100vh",
-          backgroundColor: "#F5F5F5",
-          paddingX: { xs: "1rem", md: "4rem" },
-          paddingY: { xs: "1rem", md: "2rem" },
-        }}
-      >
+      <div className="min-h-screen bg-neutral-100 px-4 py-4 md:px-16 md:py-8">
         {/* Header Section */}
-        <Typography variant="h4" gutterBottom>
-          Your Shopping Cart
-        </Typography>
-        <Typography variant="body1" sx={{ marginBottom: "2rem" }}>
-          {cartItems.length} items in your cart
-        </Typography>
+        <h1 className="text-3xl font-semibold mb-2">Your Shopping Cart</h1>
+        <p className="text-gray-600 mb-8">{cartItems.length} items in your cart</p>
 
-        <Grid container spacing={4}>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           {cartItems.length === 0 ? (
             // Empty Cart Section
-            <Grid
-              // component={Grid}
-              item
-              xs={12}
-              md={8}
-              sx={{
-                // display: "flex",
-                flex: 1,
-                textAlign: "center",
-                padding: "1.5rem",
-                borderRadius: 2,
-                backgroundColor: "#fff",
-                marginTop: 4,
-                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-              }}
-            >
-              <CardMedia
-                sx={{
-                  height: 400,
-                  width: 300,
-                  marginBottom: 2,
-                  marginX: "auto",
-                }}
-                image={emptyCartImg}
-                title="Your cart is empty"
+            <div className="md:col-span-8 bg-white rounded-lg p-6 mt-10 shadow text-center flex flex-col items-center">
+              <img
+                className="h-[400px] w-[300px] mb-4 object-cover mx-auto"
+                src={emptyCartImg}
+                alt="Your cart is empty"
               />
-              <Typography variant="h6">Your cart is empty</Typography>
+              <h2 className="text-xl font-medium">Your cart is empty</h2>
               <Button
-                variant="contained"
-                color="primary"
-                style={{ marginTop: "1rem" }}
+                className="mt-4"
                 onClick={() => navigate("/products")}
               >
                 Go Shopping
               </Button>
-            </Grid>
+            </div>
           ) : (
             // Book List Section
-            <Grid item xs={12} md={8}>
-              <Box
-                sx={{
-                  flex: 2,
-                  backgroundColor: "#FFF",
-                  borderRadius: "8px",
-                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                  padding: "1.5rem",
-                }}
-              >
-                {cartItems.map((item) => (
-                  <Box
-                    key={item.cartId}
-                    sx={{
-                      display: "flex",
-                      flexDirection: { xs: "column", sm: "row" },
-                      alignItems: { xs: "flex-start", sm: "center" },
-                      marginBottom: "1rem",
-                      borderBottom: "1px solid #E0E0E0",
-                      paddingBottom: "1rem",
-                    }}
-                  >
-                    <CardMedia
-                      image={item.book.coverImg}
-                      title={item.book.title}
-                      sx={{
-                        width: { xs: "100%", sm: 80 },
-                        height: { xs: 180, sm: 120 },
-                        borderRadius: "4px",
-                        marginBottom: { xs: "1rem", sm: "0" },
-                        marginRight: { sm: "1rem" },
-                      }}
+            <div className="md:col-span-8 bg-white rounded-lg shadow p-6">
+              {cartItems.map((item) => (
+                <div
+                  key={item.cartId}
+                  className="flex flex-col sm:flex-row sm:items-center mb-4 border-b border-gray-200 pb-4"
+                >
+                  <img
+                    src={item.book.coverImg}
+                    alt={item.book.title}
+                    className="w-full sm:w-20 h-[180px] sm:h-[120px] rounded object-cover mb-4 sm:mb-0 sm:mr-4"
+                  />
+                  <div className="flex-1">
+                    <h3 className="text-lg font-medium">{item.book.title}</h3>
+                    <p className="text-sm text-gray-500">by {item.book.author}</p>
+                    <p className="mt-2 text-base">${parseFloat(item.book.price).toFixed(2)}</p>
+                  </div>
+                  <div className="flex items-center justify-between sm:justify-center w-full sm:w-auto mt-4 sm:mt-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleQuantityChange(item.cartId, item.quantity - 1)}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <Input
+                      value={item.quantity}
+                      type="number"
+                      min={1}
+                      className="w-16 mx-2 text-center"
+                      onChange={(e) =>
+                        handleQuantityChange(item.cartId, parseInt(e.target.value) || 1)
+                      }
                     />
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="h6">{item.book.title}</Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        by {item.book.author}
-                      </Typography>
-                      <Typography variant="body1" sx={{ marginTop: "0.5rem" }}>
-                        ${parseFloat(item.book.price).toFixed(2)}
-                      </Typography>
-                    </Box>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: { xs: "space-between", sm: "center" },
-                        width: { xs: "100%", sm: "auto" },
-                        marginTop: { xs: "1rem", sm: "0" },
-                      }}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleQuantityChange(item.cartId, item.quantity + 1)}
                     >
-                      <IconButton
-                        onClick={() =>
-                          handleQuantityChange(item.cartId, item.quantity - 1)
-                        }
-                      >
-                        <Remove />
-                      </IconButton>
-                      <TextField
-                        value={item.quantity}
-                        type="number"
-                        inputProps={{ min: 1 }}
-                        sx={{
-                          width: "50px",
-                          textAlign: "center",
-                          margin: "0 0.5rem",
-                        }}
-                        onChange={(e) =>
-                          handleQuantityChange(
-                            item.cartId,
-                            parseInt(e.target.value) || 1
-                          )
-                        }
-                      />
-                      <IconButton
-                        onClick={() =>
-                          handleQuantityChange(item.cartId, item.quantity + 1)
-                        }
-                      >
-                        <Add />
-                      </IconButton>
-                    </Box>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        marginLeft: { sm: "1rem" },
-                        marginTop: { xs: "1rem", sm: "0" },
-                      }}
-                    >
-                      $
-                      {(parseFloat(item.book.price) * item.quantity).toFixed(2)}{" "}
-                    </Typography>
-                    <IconButton
-                      onClick={() => handleRemoveItem(item.cartId)}
-                      color="secondary"
-                      sx={{ marginTop: { xs: "1rem", sm: "0" } }}
-                    >
-                      <Delete />
-                    </IconButton>
-                  </Box>
-                ))}
-              </Box>
-            </Grid>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="sm:ml-4 mt-4 sm:mt-0 text-base font-medium whitespace-nowrap">
+                    ${(parseFloat(item.book.price) * item.quantity).toFixed(2)}{" "}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="mt-4 sm:mt-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => handleRemoveItem(item.cartId)}
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
           )}
 
           {/* Order Summary Section */}
-          <Grid item xs={12} md={4}>
-            <Box
-              sx={{
-                flex: 1,
-                backgroundColor: "#FFF",
-                borderRadius: "8px",
-                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                padding: "1.5rem",
-                // height: { xs: "auto", md: "710px" }, // Fixed height on larger screens
-                // overflowY: "auto", // Enable scrolling if content exceeds height
-              }}
-            >
-              <Typography variant="h6" gutterBottom>
-                Shipping Address
-              </Typography>
-              <Box
-                display="flex"
-                flexDirection={"column"}
-                gap={2}
-                sx={{ marginBottom: "1rem" }}
-              >
-                <Box
-                  display="flex"
-                  gap={2}
-                  sx={{
-                    marginBottom: "1rem",
-                    flexDirection: { xs: "column", sm: "row" },
-                  }}
-                >
-                  <TextField
-                    label="Receiver's name"
+          <div className="md:col-span-4 bg-white rounded-lg shadow p-6 h-fit">
+            <h3 className="text-xl font-semibold mb-4">Shipping Address</h3>
+            <div className="flex flex-col gap-4 mb-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="w-full">
+                  <label className="block text-sm font-medium mb-1">Receiver's name</label>
+                  <Input
                     value={receiverName}
                     onChange={(e) => setReceiverName(e.target.value)}
-                    fullWidth
                   />
-                  <TextField
-                    label="Receiver's phone number"
+                </div>
+                <div className="w-full">
+                  <label className="block text-sm font-medium mb-1">Receiver's phone number</label>
+                  <Input
                     value={receiverPhone}
                     onChange={(e) => setReceiverPhone(e.target.value)}
-                    fullWidth
                   />
-                </Box>
+                </div>
+              </div>
+              <div className="w-full">
+                <label className="block text-sm font-medium mb-1">Address</label>
+                <Input
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+              </div>
+            </div>
 
-                <Box display="flex" gap={2} sx={{ marginBottom: "1rem" }}>
-                  <TextField
-                    label="Address"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    fullWidth
-                  />
-                </Box>
-              </Box>
+            <div className="border-t my-4" />
 
-              <Divider sx={{ marginY: "1rem" }} />
+            <h3 className="text-xl font-semibold mb-4">Payment Method</h3>
+            <select
+              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mb-4"
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+            >
+              <option value="Credit Card">Credit Card</option>
+              <option value="PayPal">PayPal</option>
+              <option value="Cash on Delivery">Cash on Delivery</option>
+            </select>
 
-              <Typography variant="h6" gutterBottom>
-                Payment Method
-              </Typography>
-              <Select
-                fullWidth
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                sx={{ marginBottom: "1rem" }}
-              >
-                <MenuItem value="Credit Card">Credit Card</MenuItem>
-                <MenuItem value="PayPal">PayPal</MenuItem>
-                <MenuItem value="Cash on Delivery">Cash on Delivery</MenuItem>
-              </Select>
+            <div className="border-t my-4" />
 
-              <Divider sx={{ marginY: "1rem" }} />
+            <label className="block text-sm font-medium mb-1">Coupon Code</label>
+            <Input
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value)}
+              placeholder="Enter your coupon code"
+              className="mb-4"
+            />
+            <Button
+              className="w-full mb-4"
+              onClick={handleApplyCoupon}
+              disabled={cartItems.length === 0}
+            >
+              Apply
+            </Button>
 
-              <TextField
-                label="Coupon Code"
-                fullWidth
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value)}
-                placeholder="Enter your coupon code"
-                sx={{ marginBottom: "1rem" }}
-              />
-              <Button
-                variant="contained"
-                color="primary"
-                fullWidth
-                onClick={handleApplyCoupon}
-                sx={{ marginBottom: "1rem" }}
-                disabled={cartItems.length === 0}
-              >
-                Apply
-              </Button>
+            <div className="border-t my-4" />
 
-              <Divider sx={{ marginY: "1rem" }} />
-
-              <Typography variant="h6" gutterBottom>
-                Cart Total
-              </Typography>
-              <Box display="flex" justifyContent="space-between" mb={1}>
-                <Typography variant="body1">Cart Subtotal:</Typography>
-                <Typography variant="body1">
-                  ${calculateSubtotal().toFixed(2)}
-                </Typography>
-              </Box>
-              <Box display="flex" justifyContent="space-between" mb={1}>
-                <Typography variant="body1">Shipping:</Typography>
-                <Typography variant="body1">5.00 $</Typography>
-              </Box>
-              {applyDiscount && (
-                <Box display="flex" justifyContent="space-between" mb={1}>
-                  <Typography variant="body1">Discount:</Typography>
-                  <Typography variant="body1">
-                    -${discountAmount.toFixed(2)}
-                  </Typography>
-                </Box>
-              )}
-              <Divider sx={{ marginY: "1rem" }} />
-              <Box display="flex" justifyContent="space-between">
-                <Typography variant="h6">Cart Total:</Typography>
-                <Typography variant="h6">
-                  ${calculateTotal().toFixed(2)}
-                </Typography>
-              </Box>
-              <Button
-                variant="contained"
-                color="primary"
-                fullWidth
-                sx={{
-                  marginTop: "1rem",
-                  backgroundColor: "#FFD700",
-                  color: "#000",
-                  "&:hover": {
-                    backgroundColor: "#FFC107",
-                  },
-                }}
-                onClick={handlePurchase}
-                disabled={cartItems.length === 0}
-              >
-                Purchase
-              </Button>
-            </Box>
-          </Grid>
-        </Grid>
-      </Box>
+            <h3 className="text-xl font-semibold mb-4">Cart Total</h3>
+            <div className="flex justify-between mb-2">
+              <p>Cart Subtotal:</p>
+              <p>${calculateSubtotal().toFixed(2)}</p>
+            </div>
+            <div className="flex justify-between mb-2">
+              <p>Shipping:</p>
+              <p>5.00 $</p>
+            </div>
+            {applyDiscount && (
+              <div className="flex justify-between mb-2">
+                <p>Discount:</p>
+                <p>-${discountAmount.toFixed(2)}</p>
+              </div>
+            )}
+            <div className="border-t my-4" />
+            <div className="flex justify-between font-semibold text-lg">
+              <p>Cart Total:</p>
+              <p>${calculateTotal().toFixed(2)}</p>
+            </div>
+            <Button
+              className="w-full mt-4 bg-yellow-400 text-black hover:bg-yellow-500"
+              onClick={handlePurchase}
+              disabled={cartItems.length === 0}
+            >
+              Purchase
+            </Button>
+          </div>
+        </div>
+      </div>
       <Footer />
-    </Box>
+    </div>
   );
 };
 
 export default CartPage;
+

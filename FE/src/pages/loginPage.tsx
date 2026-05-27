@@ -1,18 +1,11 @@
 import React, { useState } from "react";
 import api from "../apis/api";
-import {
-  Box,
-  Button,
-  Container,
-  Grid,
-  TextField,
-  Typography,
-  Link,
-} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import loginImg from "../assets/Images/loginImage.jpeg";
 import registerImg from "../assets/Images/registerImage.jpeg";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
 
 const LoginRegisterForm: React.FC = () => {
   const navigate = useNavigate();
@@ -85,15 +78,19 @@ const LoginRegisterForm: React.FC = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await api.post("accounts/login/", {
+      const response = await api.post("token/", {
         username: formData.username,
         password: formData.password,
       });
 
-      // Assuming the API response contains user information in `response.data.user`
-      const userInfo = response.data;
+      // The API response contains the JWT tokens and user information
+      const { access, refresh, user: userInfo } = response.data;
+      
+      // Store JWT tokens in localStorage
+      localStorage.setItem("accessToken", access);
+      localStorage.setItem("refreshToken", refresh);
 
-      // Optional: Store non-sensitive user info in a regular cookie
+      // Store non-sensitive user info in a regular cookie (for backward compatibility)
       document.cookie = `username=${userInfo.username}; path=/; max-age=604800`; // 1 week expiry
       document.cookie = `email=${userInfo.email}; path=/; max-age=604800`; // 1 week expiry
       document.cookie = `fullname=${userInfo.fullname}; path=/; max-age=604800`; // 1 week expiry
@@ -105,12 +102,12 @@ const LoginRegisterForm: React.FC = () => {
       else navigate("/"); // Redirect to home page
 
       toast.success("Login successful!");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Login failed:", err);
-      toast.error(err.response.data.error);
+      toast.error(err.response?.data?.detail || err.response?.data?.error || "Login failed");
 
       setError(
-        err.response.data.error || "Failed to log in. Please try again."
+        err.response?.data?.detail || err.response?.data?.error || "Failed to log in. Please try again."
       );
     }
   };
@@ -133,275 +130,180 @@ const LoginRegisterForm: React.FC = () => {
 
       setIsLogin(true); // Switch to login form
       toast.success("Registration successful! Please log in.");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Sign Up failed:", err);
       toast.error(
-        err.response.data.error || "Failed to register. Please try again."
+        err.response?.data?.error || "Failed to register. Please try again."
       );
-      // setError(
-      //   err.response?.data?.message || "Failed to register. Please try again."
-      // );
     }
   };
 
   const getPasswordStrengthColor = (strength: string): string => {
     switch (strength) {
       case "Weak":
-        return "red";
+        return "text-red-500";
       case "Medium":
-        return "orange";
+        return "text-orange-500";
       case "Strong":
-        return "green";
+        return "text-green-500";
       default:
-        return "inherit";
+        return "text-inherit";
     }
   };
 
   return (
-    <Container
-      maxWidth="md"
-      sx={{
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100vh",
-      }}
-    >
-      <Grid
-        container
-        sx={{
-          boxShadow: 3,
-          borderRadius: 2,
-          overflow: "hidden",
-          maxWidth: "900px",
-        }}
-      >
+    <div className="flex items-center justify-center min-h-screen p-4 bg-gray-50">
+      <div className="flex flex-col md:flex-row shadow-lg rounded-xl overflow-hidden max-w-4xl w-full bg-white">
         {/* Left Section */}
-        <Grid
-          item
-          xs={12}
-          md={6}
-          sx={{
-            backgroundColor: isLogin ? "#FFF7E4" : "#FAECE3",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexDirection: "column",
-            padding: 4,
-          }}
+        <div
+          className={`w-full md:w-1/2 flex flex-col items-center justify-center p-8 transition-colors duration-300 ${
+            isLogin ? "bg-[#FFF7E4]" : "bg-[#FAECE3]"
+          }`}
         >
-          <Box
-            component="img"
+          <img
             src={isLogin ? loginImg : registerImg}
             alt="Bookstore Illustration"
-            sx={{
-              maxHeight: "300px",
-              maxWidth: "100%",
-              objectFit: "contain",
-              marginBottom: 2,
-            }}
+            className="max-h-[300px] max-w-full object-contain mb-4"
           />
-          <Typography variant="h5" align="center">
+          <h2 className="text-2xl font-medium text-center">
             {isLogin ? "Welcome Back!" : "Welcome to our bookstore!"}
-          </Typography>
-        </Grid>
+          </h2>
+        </div>
 
         {/* Right Section */}
-        <Grid
-          item
-          xs={12}
-          md={6}
-          sx={{
-            padding: 4,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Typography variant="h4" gutterBottom>
+        <div className="w-full md:w-1/2 p-8 flex flex-col justify-center items-center">
+          <h1 className="text-3xl font-semibold mb-6">
             {isLogin ? "Hello Again!" : "Create an Account"}
-          </Typography>
-          <form style={{ width: "100%" }}>
+          </h1>
+          <form className="w-full" onSubmit={(e) => e.preventDefault()}>
             {isLogin ? (
-              <>
-                <TextField
-                  fullWidth
-                  label="Username or Email"
-                  name="username"
-                  variant="outlined"
-                  margin="normal"
-                  value={formData.username}
-                  onChange={handleInputChange}
-                />
-                <TextField
-                  fullWidth
-                  label="Password"
-                  name="password"
-                  type="password"
-                  variant="outlined"
-                  margin="normal"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                />
-              </>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Username or Email</label>
+                  <Input
+                    name="username"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Password</label>
+                  <Input
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </div>
             ) : (
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Full Name"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Full Name *</label>
+                  <Input
                     name="fullname"
-                    variant="outlined"
-                    margin="normal"
                     required
                     value={formData.fullname}
                     onChange={handleInputChange}
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Account Name"
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Account Name *</label>
+                  <Input
                     name="username"
-                    variant="outlined"
-                    margin="normal"
                     required
                     value={formData.username}
                     onChange={handleInputChange}
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Phone Number *</label>
+                  <Input
                     type="tel"
-                    label="Phone Number"
                     name="phonenumber"
-                    variant="outlined"
-                    margin="normal"
                     required
                     value={formData.phonenumber}
                     onChange={handleInputChange}
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Address"
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Address *</label>
+                  <Input
                     name="address"
-                    variant="outlined"
-                    margin="normal"
                     required
                     value={formData.address}
                     onChange={handleInputChange}
                   />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium mb-1">Email *</label>
+                  <Input
                     type="email"
-                    label="Email"
                     name="email"
-                    variant="outlined"
-                    margin="normal"
                     required
                     value={formData.email}
                     onChange={handleInputChange}
                   />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Password"
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Password *</label>
+                  <Input
                     name="password"
                     type="password"
-                    variant="outlined"
-                    margin="normal"
                     onChange={handleInputChange}
                     onFocus={() => setPasswordStrengthVisible(true)}
                     onBlur={() => setPasswordStrengthVisible(false)}
                     required
                   />
                   {passwordStrengthVisible && (
-                    <Typography variant="body2">
+                    <p className="text-sm mt-1">
                       <span>Strength: </span>
-                      <span
-                        style={{
-                          color: getPasswordStrengthColor(passwordStrength),
-                          fontWeight: "bold",
-                        }}
-                      >
+                      <span className={`font-bold ${getPasswordStrengthColor(passwordStrength)}`}>
                         {passwordStrength}
                       </span>
-                    </Typography>
+                    </p>
                   )}
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Confirm Password"
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Confirm Password *</label>
+                  <Input
                     name="confirmPassword"
                     type="password"
-                    variant="outlined"
-                    margin="normal"
                     onChange={handleInputChange}
                     required
                   />
                   {error && (
-                    <Typography variant="body2" color="error">
+                    <p className="text-sm text-red-500 mt-1">
                       {error}
-                    </Typography>
+                    </p>
                   )}
-                </Grid>
-              </Grid>
+                </div>
+              </div>
             )}
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-end",
-                marginTop: 2,
-              }}
-            >
-              {/* <Link href="#" variant="body2">
-                {isLogin ? "Forgot Password?" : ""}
-              </Link> */}
-              {isLogin && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleLogin}
-                  type="button"
-                >
+            <div className="flex items-center justify-end mt-6">
+              {isLogin ? (
+                <Button onClick={handleLogin} type="button">
                   Sign In
                 </Button>
-              )}
-              {!isLogin && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleSignUp}
-                  type="button"
-                >
+              ) : (
+                <Button onClick={handleSignUp} type="button">
                   Sign Up
                 </Button>
               )}
-            </Box>
+            </div>
           </form>
           <Button
             onClick={handleChangeForm}
-            sx={{ marginTop: 2 }}
-            color="secondary"
-            variant="text"
+            variant="ghost"
+            className="mt-6 text-gray-500 hover:text-gray-800"
           >
             {isLogin
               ? "Not a member? Register now"
               : "Already have an account? Sign in"}
           </Button>
-        </Grid>
-      </Grid>
-    </Container>
+        </div>
+      </div>
+    </div>
   );
 };
 

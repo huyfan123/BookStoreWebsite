@@ -1,18 +1,12 @@
-import React, { useEffect, useState } from "react";
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Grid,
-  Tab,
-  Tabs,
-  Typography,
-} from "@mui/material";
+import React, { useEffect, useState, useRef } from "react";
 import Header from "../components/header";
 import Footer from "../components/footer";
 import { useLocation } from "react-router-dom";
 import api from "../apis/api";
 import { toast } from "react-toastify";
+import { Loader2, ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { Button } from "../components/ui/button";
+import { BookCard } from "./home";
 
 interface BookDetailsData {
   title: string;
@@ -26,19 +20,23 @@ interface BookDetailsData {
   genres: string[];
   bookFormat: string;
   series: string;
-  quantity: number; // Add quantity to BookDetailsData
+  quantity: number;
+  rating: number;
+  numRatings: number;
 }
 
 const BookDetails: React.FC = () => {
-  // Extract the query string
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const bookId = queryParams.get("book-id"); // Get the 'book-id' parameter
-  const [cartItems, setCartItems] = useState([]);
+  const bookId = queryParams.get("book-id");
+  const [cartItems, setCartItems] = useState<string[]>([]);
   const [bookDetails, setBookDetails] = useState<BookDetailsData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
+  
+  const [recommendedBooks, setRecommendedBooks] = useState<any[]>([]);
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!bookId) {
@@ -85,9 +83,51 @@ const BookDetails: React.FC = () => {
     fetchBookDetails();
   }, [bookId]);
 
-  const handleTabChange = (event: React.ChangeEvent<{}>, newValue: number) => {
-    setTabValue(newValue);
-  };
+  useEffect(() => {
+    if (!bookId) return;
+    const fetchRecommended = async () => {
+      try {
+        const username = document.cookie
+          .split(";")
+          .find((cookie) => cookie.trim().startsWith("username="))
+          ?.split("=")[1];
+
+        let endpoint = `/books/recommend?bookId=${bookId}`;
+        if (username) {
+          endpoint += `&userId=${username}`;
+        }
+        
+        const response = await api.get(endpoint);
+        setRecommendedBooks(response.data);
+      } catch (error) {
+        console.error("Error fetching recommended books:", error);
+      }
+    };
+    fetchRecommended();
+  }, [bookId]);
+
+  useEffect(() => {
+    if (!bookId) return;
+    const logViewInteraction = async () => {
+      try {
+        const username = document.cookie
+          .split(";")
+          .find((cookie) => cookie.trim().startsWith("username="))
+          ?.split("=")[1];
+
+        if (username) {
+          await api.post("books/interaction/", {
+            username: username,
+            bookId: bookId,
+            interaction_type: "view",
+          });
+        }
+      } catch (error) {
+        console.error("Error logging view interaction:", error);
+      }
+    };
+    logViewInteraction();
+  }, [bookId]);
 
   const handleAddToCart = () => {
     if (document.cookie.indexOf("username") === -1) {
@@ -100,65 +140,49 @@ const BookDetails: React.FC = () => {
         username: document.cookie
           .split(";")
           .find((cookie) => cookie.trim().startsWith("username="))
-          .split("=")[1],
+          ?.split("=")[1],
         bookId: bookId,
         quantity: 1,
       })
       .then((response) => {
         toast.success("Book added to cart successfully.");
-        setCartItems([...cartItems, bookId]);
+        if (bookId) {
+          setCartItems([...cartItems, bookId]);
+        }
       })
       .catch((error) => {
         toast.error("Error adding book to cart.");
       });
   };
 
+  const scrollCarousel = (direction: 'left' | 'right') => {
+    if (carouselRef.current) {
+      const scrollAmount = direction === 'left' ? -350 : 350;
+      carouselRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          textAlign: "center",
-        }}
-      >
-        <Typography variant="h5" color="error">
-          {error}
-        </Typography>
-      </Box>
+      <div className="flex justify-center items-center min-h-screen text-center">
+        <h2 className="text-xl text-red-500 font-medium">{error}</h2>
+      </div>
     );
   }
 
   if (!bookDetails) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          textAlign: "center",
-        }}
-      >
-        <Typography variant="h5">Book not found for ID: {bookId}</Typography>
-      </Box>
+      <div className="flex justify-center items-center min-h-screen text-center">
+        <h2 className="text-xl font-medium">Book not found for ID: {bookId}</h2>
+      </div>
     );
   }
 
@@ -168,125 +192,166 @@ const BookDetails: React.FC = () => {
     description,
     price,
     coverImg,
-    publisher,
+    series,
     publishDate,
-    isbn,
     genres,
     bookFormat,
-    series,
-    quantity, // Destructure quantity
+    quantity,
+    rating,
+    numRatings,
   } = bookDetails;
 
   return (
-    <>
+    <div className="min-h-screen bg-[#f8fafd] flex flex-col">
       <Header checkPoint={cartItems.length} />
-      <Box
-        sx={{
-          padding: "20px",
-          maxWidth: "1200px",
-          marginX: "auto",
-          marginTop: "50px",
-        }}
-      >
-        <Grid container spacing={4}>
-          {/* Left Section: Book Image */}
-          <Grid
-            item
-            xs={12}
-            sm={6}
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              maxHeight: {
-                xs: "300px", // For small screens
-                md: "500px", // For medium screens and above
-              },
-            }}
-          >
-            <img
-              src={coverImg}
-              alt={title}
-              style={{
-                borderRadius: "8px",
-                height: "100%",
-              }}
-            />
-          </Grid>
+      
+      <main className="flex-grow pb-24">
+        {/* Product Info Grid */}
+        <div className="max-w-7xl mx-auto px-6 md:px-12 mt-12 mb-16">
+          <div className="bg-white rounded-[2.5rem] shadow-sm border border-blue-50/50 p-8 md:p-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
+              {/* Left Section: Book Image */}
+              <div className="flex justify-center items-center bg-slate-50/50 rounded-3xl p-8 aspect-[3/4] md:aspect-auto">
+                <img
+                  src={coverImg}
+                  alt={title}
+                  className="rounded-xl max-h-[500px] object-contain shadow-lg hover:scale-105 transition-transform duration-500"
+                />
+              </div>
 
-          {/* Right Section: Book Details */}
-          <Grid item xs={12} sm={6}>
-            <Typography variant="h3" gutterBottom>
-              {title}
-            </Typography>
-            <Typography variant="subtitle1" color="textSecondary" gutterBottom>
-              By {author}
-            </Typography>
-            <Typography
-              variant="h4"
-              color="primary"
-              sx={{ fontWeight: "bold" }}
-              gutterBottom
-            >
-              ${price}
-            </Typography>
-            <Typography variant="subtitle1" color="textSecondary" gutterBottom>
-              Series: {series || "None"}
-            </Typography>
-            <Typography variant="body2" color="textSecondary" gutterBottom>
-              Published Date: {publishDate}
-            </Typography>
-            <Typography variant="body2" color="textSecondary" gutterBottom>
-              Genres: {genres.join(", ")}
-            </Typography>
-            <Typography variant="body2" color="textSecondary" gutterBottom>
-              In stock: {quantity}
-            </Typography>
+              {/* Right Section: Book Details */}
+              <div className="flex flex-col justify-center">
+                <div className="inline-block bg-[#e8f0fe] text-[#1e58c8] text-xs font-bold px-4 py-2 rounded-full mb-6 uppercase tracking-wider self-start">
+                  In Stock: {quantity}
+                </div>
+                
+                <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 leading-tight">{title}</h1>
+                <p className="text-xl text-slate-500 mb-4 font-medium">By {author}</p>
+                
+                <div className="flex items-center gap-2 mb-6">
+                  <div className="flex text-amber-400">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-5 h-5 ${
+                          i < Math.round(Number(rating) || 5)
+                            ? "fill-current"
+                            : "text-slate-300"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-slate-500 font-medium ml-2">
+                    {rating ? Number(rating).toFixed(2) : "5.00"} ({numRatings || 0} reviews)
+                  </span>
+                </div>
+                
+                <h2 className="text-4xl text-[#1e58c8] font-extrabold mb-8 tracking-tight">${price}</h2>
+                
+                <div className="flex flex-col gap-4 text-slate-600 mb-10 bg-[#f4f7fb] rounded-2xl p-6 border border-blue-50">
+                  <div className="flex justify-between items-center border-b border-slate-200/60 pb-3">
+                    <span className="font-medium text-slate-500">Series</span>
+                    <span className="font-semibold text-slate-900">{series || "None"}</span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-slate-200/60 pb-3">
+                    <span className="font-medium text-slate-500">Published Date</span>
+                    <span className="font-semibold text-slate-900">{publishDate}</span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-slate-200/60 pb-3">
+                    <span className="font-medium text-slate-500">Format</span>
+                    <span className="font-semibold text-slate-900">{bookFormat || "Paperback"}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-slate-500">Genres</span>
+                    <span className="font-semibold text-slate-900 truncate max-w-[60%] text-right">{genres?.join(", ") || "Fiction"}</span>
+                  </div>
+                </div>
 
-            <Button
-              variant="contained"
-              color="primary"
-              style={{ marginTop: "20px", marginRight: "10px" }}
-              onClick={() => {
-                handleAddToCart();
-              }}
-              disabled={quantity === 0}
-            >
-              {quantity === 0 ? "Out of stock" : "Add to Cart"}
-            </Button>
-          </Grid>
-        </Grid>
+                <Button
+                  className="rounded-full h-14 text-base md:text-lg font-bold tracking-wide shadow-md hover:shadow-lg bg-[#1e58c8] hover:bg-blue-700 text-white w-full md:w-auto px-12 transition-all hover:-translate-y-0.5"
+                  onClick={handleAddToCart}
+                  disabled={quantity === 0}
+                >
+                  {quantity === 0 ? "OUT OF STOCK" : "ADD TO CART"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Tabs Section */}
-        <Box sx={{ marginTop: "40px" }}>
-          <Tabs
-            value={tabValue}
-            onChange={handleTabChange}
-            aria-label="book-details-tabs"
-            variant="scrollable"
-            scrollButtons="auto"
+        <div className="max-w-7xl mx-auto px-6 md:px-12 mb-20">
+          <div className="bg-white rounded-[2rem] shadow-sm border border-blue-50/50 p-8 md:p-10">
+            <div className="flex gap-2 overflow-x-auto pb-4 mb-6 border-b border-slate-100 hide-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              {["Description", "Book Format", "Reviews"].map((tabLabel, index) => (
+                <button
+                  key={index}
+                  className={`py-3 px-8 rounded-full whitespace-nowrap text-sm font-bold tracking-wide transition-all ${
+                    tabValue === index
+                      ? "bg-[#e8f0fe] text-[#1e58c8]"
+                      : "bg-transparent text-slate-500 hover:bg-slate-50"
+                  }`}
+                  onClick={() => setTabValue(index)}
+                >
+                  {tabLabel}
+                </button>
+              ))}
+            </div>
+
+            <div className="p-4 md:p-6 min-h-[200px]">
+              {tabValue === 0 && (
+                <div className="prose prose-slate max-w-none">
+                  <p className="text-lg leading-loose text-slate-600 font-light whitespace-pre-wrap">
+                    {description}
+                  </p>
+                </div>
+              )}
+              {tabValue === 1 && (
+                <p className="text-lg leading-loose text-slate-600 font-light">{bookFormat || "Information not available."}</p>
+              )}
+              {tabValue === 2 && (
+                <p className="text-lg leading-loose text-slate-600 font-light italic">No reviews yet.</p>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        {/* Carousel: Readers Who Bought This Also Liked */}
+        <div className="max-w-7xl mx-auto px-6 md:px-12">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Readers who bought this also liked</h2>
+            <div className="hidden md:flex gap-3">
+              <button 
+                onClick={() => scrollCarousel('left')}
+                className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-[#e8f0fe] hover:text-[#1e58c8] hover:border-blue-200 transition-colors shadow-sm"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button 
+                onClick={() => scrollCarousel('right')}
+                className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-[#e8f0fe] hover:text-[#1e58c8] hover:border-blue-200 transition-colors shadow-sm"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+          
+          <div 
+            ref={carouselRef}
+            className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-8 scroll-smooth hide-scrollbar [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            <Tab label="Description" />
-            <Tab label="Book Format" />
-            <Tab label="Reviews" />
-          </Tabs>
-
-          <Box sx={{ padding: "20px" }}>
-            {tabValue === 0 && (
-              <Typography variant="body1" paragraph>
-                {description}
-              </Typography>
-            )}
-            {tabValue === 1 && (
-              <Typography variant="body1">{bookFormat}</Typography>
-            )}
-
-            {tabValue === 2 && <Typography variant="body1"></Typography>}
-          </Box>
-        </Box>
-      </Box>
+            {recommendedBooks.map((book: any, idx: number) => (
+              <div key={idx} className="snap-start shrink-0 w-[280px] md:w-[300px]">
+                <BookCard book={book} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
+      
       <Footer />
-    </>
+    </div>
   );
 };
 
