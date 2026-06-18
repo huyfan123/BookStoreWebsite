@@ -93,6 +93,7 @@ class RecommenderService:
         self.similarity_dict = similarity_dict
 
     def train_cf(self, interactions_df):
+        """Train the Collaborative Filtering recommendation model."""
         if interactions_df.empty:
             return
             
